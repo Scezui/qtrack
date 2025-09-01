@@ -16,7 +16,7 @@ export const useApp = () => {
   return context;
 };
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export default function Providers({ children }: { children: React.ReactNode }) {
   const appState = useAppState();
 
   return (
