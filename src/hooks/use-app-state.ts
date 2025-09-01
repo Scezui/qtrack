@@ -126,18 +126,21 @@ const useAppState = () => {
       
       const today = new Date();
       const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
-
+      
       const attendanceQuery = query(
         collection(db, 'attendance'),
-        where('user.id', '==', user.id),
-        where('timestamp', '>=', startOfDay),
-        where('timestamp', '<', endOfDay)
+        where('user.id', '==', user.id)
       );
-
+      
       const querySnapshot = await getDocs(attendanceQuery);
+      const todayEntry = querySnapshot.docs.find(doc => {
+        const record = doc.data() as AttendanceRecord;
+        const recordDate = (record.timestamp as unknown as Timestamp).toDate();
+        return recordDate >= startOfDay;
+      })
 
-      if (!querySnapshot.empty) {
+
+      if (todayEntry) {
           toast({
             title: 'Already Logged',
             description: `${user.name} has already been logged for today.`,

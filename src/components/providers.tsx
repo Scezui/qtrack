@@ -8,7 +8,7 @@ type AppContextType = ReturnType<typeof useAppState>;
 
 const AppContext = createContext<AppContextType | null>(null);
 
-export const AppProvider = ({ children }: { children: React.ReactNode }) => {
+const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const appState = useAppState();
 
   return (
@@ -26,3 +26,7 @@ export const useApp = () => {
   }
   return context;
 };
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return <AppProvider>{children}</AppProvider>;
+}
