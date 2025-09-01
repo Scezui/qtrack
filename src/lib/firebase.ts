@@ -8,7 +8,7 @@ const firebaseConfig = {
   projectId: "qtrack-2qwb1",
   appId: "1:716182257915:web:3bc1e8af4e5b300f49305e",
   storageBucket: "qtrack-2qwb1.firebasestorage.app",
-  apiKey: "AIzaSyC5xIAE0VMpjX1uqbPyuMpMdy2K35vDwwM",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: "qtrack-2qwb1.firebaseapp.com",
   measurementId: "",
   messagingSenderId: "716182257915",
