@@ -3,12 +3,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { User, AttendanceLog, AttendanceRecord } from '@/lib/types';
 import { generateQrCode } from '@/ai/flows/generate-qr-code-from-user-profile';
+import { useRouter } from 'next/navigation';
+import { useToast } from './use-toast';
 
 const useAppState = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [attendanceLog, setAttendanceLog] = useState<AttendanceLog>({});
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     let storedUsers: User[] = [];
@@ -36,14 +40,6 @@ const useAppState = () => {
     setLoading(false);
   }, []);
 
-
-  const generateId = () => {
-      if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
-        return window.crypto.randomUUID();
-      }
-      return Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
-  };
-
   useEffect(() => {
     if (!loading) {
       localStorage.setItem('qtrack-users', JSON.stringify(users));
@@ -61,6 +57,13 @@ const useAppState = () => {
       localStorage.setItem('qtrack-auth', JSON.stringify(isAuthenticated));
     }
   }, [isAuthenticated, loading]);
+
+  const generateId = () => {
+    if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
+      return window.crypto.randomUUID();
+    }
+    return Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+  };
 
   const addUser = async (name: string, studentId: string) => {
     const userProfile = JSON.stringify({ name, studentId });
@@ -118,9 +121,14 @@ const useAppState = () => {
   const login = (user: string, pass: string) => {
     if (user === 'admin' && pass === 'password') {
       setIsAuthenticated(true);
-      return true;
+      router.push('/dashboard');
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: "Invalid username or password.",
+      });
     }
-    return false;
   }
 
   const logout = () => {

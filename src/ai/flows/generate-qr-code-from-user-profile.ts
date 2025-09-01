@@ -22,7 +22,7 @@ const GenerateQrCodeOutputSchema = z.object({
   qrCodeDataUri: z
     .string()
     .describe(
-      'The QR code as a data URI that must include a MIME type and use Base64 encoding. Expected format: \'data:<mimetype>;base64,<encoded_data>\'.' 
+      'The QR code as a data URI that must include a MIME type and use Base64 encoding. Expected format: \'data:<mimetype>;base64,<encoded_data>\'.'
     ),
 });
 export type GenerateQrCodeOutput = z.infer<typeof GenerateQrCodeOutputSchema>;
@@ -38,7 +38,7 @@ const generateQrCodeFlow = ai.defineFlow(
     outputSchema: GenerateQrCodeOutputSchema,
   },
   async input => {
-    const qrCodeDataUri = await QRCode.toDataURL(input.userProfile);
+    const qrCodeDataUri = await QRCode.toDataURL(input.userProfile, { width: 512 });
     return { qrCodeDataUri };
   }
 );

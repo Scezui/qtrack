@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,26 +13,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { QrCode, LogIn } from "lucide-react";
 import { useApp } from "@/components/providers";
-import { useToast } from "@/hooks/use-toast";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const router = useRouter();
   const { login } = useApp();
-  const { toast } = useToast();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (login(email, password)) {
-      router.push("/dashboard");
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Login Failed",
-        description: "Invalid username or password.",
-      });
-    }
+    login(email, password);
   };
 
   return (
@@ -64,6 +52,7 @@ export default function LoginPage() {
               <Input
                 id="password"
                 type="password"
+                placeholder="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
