@@ -24,6 +24,8 @@ import { Users, ScanLine, Calendar, QrCode, LogOut, Menu } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
+  SheetHeader,
+  SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
 
@@ -114,6 +116,9 @@ export default function DashboardLayout({
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="sm:max-w-xs">
+              <SheetHeader>
+                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+              </SheetHeader>
               <nav className="grid gap-6 text-lg font-medium">
                 <Link
                   href="/dashboard"
