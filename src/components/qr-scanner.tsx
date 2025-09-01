@@ -9,16 +9,90 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import jsQR from "jsqr";
 
 export function QrScanner() {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isCameraOn, setIsCameraOn] = useState(false);
-  const [scanResult, setScanResult] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const { users, logAttendance } = useApp();
   const { toast } = useToast();
   const [selectedUserToSimulate, setSelectedUserToSimulate] = useState<string>('');
+  const [isProcessing, setIsProcessing] = useState(false);
   
+  const handleScan = useCallback((data: string) => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+
+    try {
+        const result = logAttendance(data);
+        if(result.success) {
+            setShowSuccess(true);
+            setTimeout(() => setShowSuccess(false), 1500); 
+            toast({
+                title: 'Scan Successful',
+                description: `${result.user?.name} has been logged.`,
+            });
+        } else {
+            if (result.message !== "User already logged in today.") {
+              toast({
+                  variant: 'destructive',
+                  title: 'Log Failed',
+                  description: result.message || "An unknown error occurred.",
+              });
+            }
+        }
+    } catch(e) {
+        toast({
+            variant: 'destructive',
+            title: 'Scan Error',
+            description: "Invalid QR code data.",
+        });
+    }
+
+    setTimeout(() => setIsProcessing(false), 2000); // Cooldown period
+  }, [isProcessing, logAttendance, toast]);
+
+  const tick = useCallback(() => {
+    if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext("2d");
+
+      if (ctx) {
+        canvas.height = video.videoHeight;
+        canvas.width = video.videoWidth;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: "dontInvert",
+        });
+
+        if (code) {
+          handleScan(code.data);
+        }
+      }
+    }
+  }, [handleScan]);
+
+  useEffect(() => {
+    let animationFrameId: number;
+
+    const scanLoop = () => {
+        if (isCameraOn && !isProcessing) {
+            tick();
+        }
+        animationFrameId = requestAnimationFrame(scanLoop);
+    }
+
+    animationFrameId = requestAnimationFrame(scanLoop);
+
+    return () => {
+        cancelAnimationFrame(animationFrameId);
+    }
+  }, [isCameraOn, tick, isProcessing]);
+
   const startCamera = async () => {
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       try {
@@ -57,7 +131,7 @@ export function QrScanner() {
 
   useEffect(() => {
     return () => {
-      stopCamera(); // Cleanup on component unmount
+      stopCamera();
     };
   }, []);
 
@@ -74,22 +148,7 @@ export function QrScanner() {
     const user = users.find(u => u.id === selectedUserToSimulate);
     if (user) {
         const scannedData = JSON.stringify({ name: user.name, studentId: user.studentId });
-        const result = logAttendance(scannedData);
-        if(result.success) {
-            setScanResult(`Welcome, ${result.user?.name}!`);
-            setShowSuccess(true);
-            setTimeout(() => setShowSuccess(false), 1500); // Animation duration
-            toast({
-                title: 'Scan Successful',
-                description: `${result.user?.name} has been logged.`,
-            });
-        } else {
-            toast({
-                variant: 'destructive',
-                title: 'Log Failed',
-                description: result.message || "User already logged in today.",
-            });
-        }
+        handleScan(scannedData);
     }
   };
 
@@ -101,7 +160,7 @@ export function QrScanner() {
           QR Code Scanner
         </CardTitle>
         <CardDescription>
-          Point the camera at a user's QR code to log their attendance.
+          Point the camera at a user's QR code to log their attendance. The scanner is now automatic.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -110,8 +169,10 @@ export function QrScanner() {
             ref={videoRef}
             autoPlay
             playsInline
+            muted
             className={cn("h-full w-full object-cover", { 'hidden': !isCameraOn })}
           />
+           <canvas ref={canvasRef} className="hidden" />
           {!isCameraOn && (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground">
                 <VideoOff className="h-16 w-16 mb-4"/>
@@ -119,8 +180,10 @@ export function QrScanner() {
             </div>
           )}
           {showSuccess && (
-             <div className="absolute inset-0 bg-accent/30 flex items-center justify-center animate-pulse">
-                <CheckCircle2 className="h-24 w-24 text-white/90"/>
+             <div className="absolute inset-0 bg-green-500/30 flex items-center justify-center">
+                <div className="bg-white/90 rounded-full p-4">
+                    <CheckCircle2 className="h-24 w-24 text-green-600 animate-pulse"/>
+                </div>
              </div>
           )}
         </div>
@@ -146,7 +209,7 @@ export function QrScanner() {
                     ))}
                 </SelectContent>
             </Select>
-            <Button onClick={handleSimulateScan} disabled={!selectedUserToSimulate}>
+            <Button onClick={handleSimulateScan} disabled={!selectedUserToSimulate || isProcessing}>
                 <ScanLine className="mr-2 h-4 w-4" /> Simulate Scan
             </Button>
           </div>

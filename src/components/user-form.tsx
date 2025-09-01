@@ -61,6 +61,15 @@ export function UserForm({ user, open, onOpenChange, onFinished }: UserFormProps
     }
   }, [user, open, form]);
 
+  const downloadQrCode = (qrCode: string, filename: string) => {
+    const link = document.createElement("a");
+    link.href = qrCode;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     try {
@@ -68,8 +77,9 @@ export function UserForm({ user, open, onOpenChange, onFinished }: UserFormProps
         await updateUser(user.id, values.name, values.studentId);
         toast({ title: "User Updated", description: "The user's details have been updated." });
       } else {
-        await addUser(values.name, values.studentId);
-        toast({ title: "User Added", description: "A new user has been created with a QR code." });
+        const newUser = await addUser(values.name, values.studentId);
+        toast({ title: "User Added", description: "A new user has been created and the QR code is downloading." });
+        downloadQrCode(newUser.qrCode, `${newUser.studentId}-${newUser.name}-QRCode.png`);
       }
       onFinished();
       onOpenChange(false);
@@ -90,7 +100,7 @@ export function UserForm({ user, open, onOpenChange, onFinished }: UserFormProps
         <DialogHeader>
           <DialogTitle>{user ? "Edit User" : "Add New User"}</DialogTitle>
           <DialogDescription>
-            {user ? "Edit the user's details below." : "Enter the new user's details to generate a QR code."}
+            {user ? "Edit the user's details below." : "Enter the new user's details to generate and download a QR code."}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -125,7 +135,7 @@ export function UserForm({ user, open, onOpenChange, onFinished }: UserFormProps
               <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {user ? "Save Changes" : "Create User"}
+                {user ? "Save Changes" : "Create User & Download QR"}
               </Button>
             </DialogFooter>
           </form>

@@ -10,33 +10,39 @@ const useAppState = () => {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const generateId = () => {
-    if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
-      return window.crypto.randomUUID();
-    }
-    // Fallback for older browsers or non-browser environments (though it should only run client-side)
-    return Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
-  };
-
   useEffect(() => {
+    let storedUsers: User[] = [];
+    let storedLogs: AttendanceLog = {};
+    let storedAuth: boolean = false;
     try {
-      const storedUsers = localStorage.getItem('qtrack-users');
-      if (storedUsers) {
-        setUsers(JSON.parse(storedUsers));
+      const usersData = localStorage.getItem('qtrack-users');
+      if (usersData) {
+        storedUsers = JSON.parse(usersData);
       }
-      const storedLogs = localStorage.getItem('qtrack-logs');
-      if (storedLogs) {
-        setAttendanceLog(JSON.parse(storedLogs));
+      const logsData = localStorage.getItem('qtrack-logs');
+      if (logsData) {
+        storedLogs = JSON.parse(logsData);
       }
-      const storedAuth = localStorage.getItem('qtrack-auth');
-      if (storedAuth) {
-        setIsAuthenticated(JSON.parse(storedAuth));
+      const authData = localStorage.getItem('qtrack-auth');
+      if (authData) {
+        storedAuth = JSON.parse(authData);
       }
     } catch (error) {
       console.error("Failed to parse from localStorage", error);
     }
+    setUsers(storedUsers);
+    setAttendanceLog(storedLogs);
+    setIsAuthenticated(storedAuth);
     setLoading(false);
   }, []);
+
+
+  const generateId = () => {
+      if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
+        return window.crypto.randomUUID();
+      }
+      return Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+  };
 
   useEffect(() => {
     if (!loading) {
@@ -94,9 +100,10 @@ const useAppState = () => {
         const newRecord: AttendanceRecord = { user, timestamp: new Date().toISOString() };
         
         setAttendanceLog(prevLog => {
+            const newDayLog = [...(prevLog[today] || []), newRecord];
             return {
                 ...prevLog,
-                [today]: [...(prevLog[today] || []), newRecord]
+                [today]: newDayLog
             };
         });
 
