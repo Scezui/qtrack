@@ -55,7 +55,8 @@ const useAppState = () => {
       return;
     };
 
-    const unsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
+    const usersCollection = collection(db, "users");
+    const unsubscribe = onSnapshot(usersCollection, (snapshot) => {
       const usersData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as User[];
       setUsers(usersData);
     });
@@ -69,7 +70,8 @@ const useAppState = () => {
       return;
     }
 
-    const unsubscribe = onSnapshot(collection(db, 'attendance'), (snapshot) => {
+    const attendanceCollection = collection(db, 'attendance');
+    const unsubscribe = onSnapshot(attendanceCollection, (snapshot) => {
       const newLog: AttendanceLog = {};
       snapshot.docs.forEach((doc) => {
         const record = doc.data() as AttendanceRecord;
@@ -91,7 +93,6 @@ const useAppState = () => {
     const { qrCodeDataUri } = await generateQrCode({ userProfile });
     const newUser = { name, studentId, qrCode: qrCodeDataUri };
     await addDoc(collection(db, "users"), newUser);
-    return newUser as User;
   };
 
   const updateUser = async (id: string, name: string, studentId: string) => {
@@ -108,37 +109,44 @@ const useAppState = () => {
   const logAttendance = useCallback(async (scannedData: string) => {
     try {
       const { name, studentId } = JSON.parse(scannedData);
-      const user = users.find(u => u.name === name && u.studentId === studentId);
+      
+      const usersQuery = query(collection(db, 'users'), where('studentId', '==', studentId), where('name', '==', name));
+      const userSnapshot = await getDocs(usersQuery);
 
-      if (user) {
-        const today = new Date();
-        const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
-
-        const attendanceQuery = query(
-          collection(db, 'attendance'),
-          where('user.id', '==', user.id),
-          where('timestamp', '>=', startOfDay),
-          where('timestamp', '<', endOfDay)
-        );
-
-        const querySnapshot = await getDocs(attendanceQuery);
-
-        if (!querySnapshot.empty) {
-            return { success: false, message: "User already logged in today." };
-        }
-
-        const newRecord: Omit<AttendanceRecord, 'id'> = { user, timestamp: new Date() };
-        await addDoc(collection(db, 'attendance'), newRecord);
-
-        return { success: true, user };
+      if (userSnapshot.empty) {
+        return { success: false, message: "User not found." };
       }
-      return { success: false, message: "User not found." };
+
+      const userDoc = userSnapshot.docs[0];
+      const user = { ...userDoc.data(), id: userDoc.id } as User;
+      
+      const today = new Date();
+      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+
+      const attendanceQuery = query(
+        collection(db, 'attendance'),
+        where('user.id', '==', user.id),
+        where('timestamp', '>=', startOfDay),
+        where('timestamp', '<', endOfDay)
+      );
+
+      const querySnapshot = await getDocs(attendanceQuery);
+
+      if (!querySnapshot.empty) {
+          return { success: false, message: "User already logged in today." };
+      }
+
+      const newRecord: Omit<AttendanceRecord, 'id'> = { user, timestamp: new Date() };
+      await addDoc(collection(db, 'attendance'), newRecord);
+
+      return { success: true, user };
+      
     } catch (error) {
       console.error(error);
       return { success: false, message: "Invalid QR code data." };
     }
-  }, [users]);
+  }, []);
   
   const login = async (email: string, pass: string) => {
     setLoading(true);
