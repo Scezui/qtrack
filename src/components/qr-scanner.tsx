@@ -7,8 +7,6 @@ import { ScanLine, Video, VideoOff, CheckCircle2 } from "lucide-react";
 import { useApp } from "@/components/providers";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import jsQR from "jsqr";
 
 export function QrScanner() {
@@ -16,9 +14,8 @@ export function QrScanner() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const { users, logAttendance } = useApp();
+  const { logAttendance } = useApp();
   const { toast } = useToast();
-  const [selectedUserToSimulate, setSelectedUserToSimulate] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
   
   const handleScan = useCallback((data: string) => {
@@ -135,23 +132,6 @@ export function QrScanner() {
     };
   }, []);
 
-  const handleSimulateScan = () => {
-    if (!selectedUserToSimulate) {
-      toast({
-        variant: "destructive",
-        title: "No User Selected",
-        description: "Please select a user to simulate scanning.",
-      });
-      return;
-    }
-    
-    const user = users.find(u => u.id === selectedUserToSimulate);
-    if (user) {
-        const scannedData = JSON.stringify({ name: user.name, studentId: user.studentId });
-        handleScan(scannedData);
-    }
-  };
-
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
@@ -194,27 +174,6 @@ export function QrScanner() {
                 {isCameraOn ? 'Turn Off Camera' : 'Turn On Camera'}
             </Button>
         </div>
-
-        <div className="p-4 border-t">
-          <Label className="font-semibold text-muted-foreground">Scan Simulation</Label>
-          <p className="text-sm text-muted-foreground mb-2">For testing purposes, select a user and simulate a scan.</p>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Select onValueChange={setSelectedUserToSimulate} value={selectedUserToSimulate}>
-                <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select a user to simulate" />
-                </SelectTrigger>
-                <SelectContent>
-                    {users.map(user => (
-                        <SelectItem key={user.id} value={user.id}>{user.name} ({user.studentId})</SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-            <Button onClick={handleSimulateScan} disabled={!selectedUserToSimulate || isProcessing}>
-                <ScanLine className="mr-2 h-4 w-4" /> Simulate Scan
-            </Button>
-          </div>
-        </div>
-
       </CardContent>
     </Card>
   );
