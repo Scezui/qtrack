@@ -62,7 +62,7 @@ const useAppState = () => {
     });
 
     return () => unsubscribe();
-  }, [firebaseUser]);
+  }, [firebaseUser, db]);
   
   useEffect(() => {
     if (!firebaseUser || !db) {
@@ -85,7 +85,7 @@ const useAppState = () => {
     });
 
     return () => unsubscribe();
-  }, [firebaseUser]);
+  }, [firebaseUser, db]);
 
 
   const addUser = async (name: string, studentId: string) => {
@@ -162,7 +162,7 @@ const useAppState = () => {
       console.error(error);
       return { success: false, message: "Invalid QR code data." };
     }
-  }, [toast]);
+  }, [db, toast]);
   
   const login = async (email: string, pass: string) => {
     setLoading(true);
