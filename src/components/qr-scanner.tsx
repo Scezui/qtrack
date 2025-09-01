@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ScanLine, Video, VideoOff, CheckCircle2 } from "lucide-react";
+import { ScanLine, Video, VideoOff, CheckCircle2, Upload } from "lucide-react";
 import { useApp } from "@/components/providers";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,7 @@ import jsQR from "jsqr";
 export function QrScanner() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const { logAttendance } = useApp();
@@ -126,6 +127,43 @@ export function QrScanner() {
     }
   };
 
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+            if (canvasRef.current) {
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height);
+                    if (code) {
+                        handleScan(code.data);
+                    } else {
+                        toast({
+                            variant: 'destructive',
+                            title: 'Scan Failed',
+                            description: 'No QR code found in the uploaded image.',
+                        });
+                    }
+                }
+            }
+        };
+        img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+    // Reset file input to allow uploading the same file again
+    event.target.value = '';
+  };
+
+
   useEffect(() => {
     return () => {
       stopCamera();
@@ -140,7 +178,7 @@ export function QrScanner() {
           QR Code Scanner
         </CardTitle>
         <CardDescription>
-          Point the camera at a user's QR code to log their attendance. The scanner is now automatic.
+          Point the camera at a user's QR code or upload an image to log their attendance.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -172,6 +210,17 @@ export function QrScanner() {
             <Button onClick={handleToggleCamera} variant="outline" className="flex-1">
                 {isCameraOn ? <VideoOff className="mr-2 h-4 w-4"/> : <Video className="mr-2 h-4 w-4"/>}
                 {isCameraOn ? 'Turn Off Camera' : 'Turn On Camera'}
+            </Button>
+             <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImageUpload}
+              accept="image/*"
+              className="hidden"
+            />
+            <Button onClick={() => fileInputRef.current?.click()} variant="outline" className="flex-1">
+                <Upload className="mr-2 h-4 w-4" />
+                Upload QR Code
             </Button>
         </div>
       </CardContent>
