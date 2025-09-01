@@ -47,7 +47,7 @@ const useAppState = () => {
       setLoading(false);
     });
     return () => unsubscribe();
-  }, [auth, router]);
+  }, [router]);
 
   useEffect(() => {
     if (!firebaseUser || !db) {
@@ -62,7 +62,7 @@ const useAppState = () => {
     });
 
     return () => unsubscribe();
-  }, [firebaseUser, db]);
+  }, [firebaseUser]);
   
   useEffect(() => {
     if (!firebaseUser || !db) {
@@ -85,7 +85,7 @@ const useAppState = () => {
     });
 
     return () => unsubscribe();
-  }, [firebaseUser, db]);
+  }, [firebaseUser]);
 
 
   const addUser = async (name: string, studentId: string) => {
@@ -93,7 +93,7 @@ const useAppState = () => {
     const userProfile = JSON.stringify({ name, studentId });
     const { qrCodeDataUri } = await generateQrCode({ userProfile });
     const newUser = { name, studentId, qrCode: qrCodeDataUri };
-    await addDoc(collection(db, "users"), newUser);
+    return addDoc(collection(db, "users"), newUser);
   };
 
   const updateUser = async (id: string, name: string, studentId: string) => {
@@ -101,7 +101,7 @@ const useAppState = () => {
     const userProfile = JSON.stringify({ name, studentId });
     const { qrCodeDataUri } = await generateQrCode({ userProfile });
     const userDocRef = doc(db, 'users', id);
-    await updateDoc(userDocRef, { name, studentId, qrCode: qrCodeDataUri });
+    return updateDoc(userDocRef, { name, studentId, qrCode: qrCodeDataUri });
   };
 
   const deleteUser = async (id: string) => {
@@ -162,7 +162,7 @@ const useAppState = () => {
       console.error(error);
       return { success: false, message: "Invalid QR code data." };
     }
-  }, [db, toast]);
+  }, [toast]);
   
   const login = async (email: string, pass: string) => {
     setLoading(true);
