@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useApp } from '@/components/providers';
@@ -37,12 +37,20 @@ export default function DashboardLayout({
   const { isAuthenticated, loading, logout } = useApp();
   const router = useRouter();
   const pathname = usePathname();
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.replace('/');
     }
   }, [isAuthenticated, loading, router]);
+  
+  useEffect(() => {
+    if (isSheetOpen) {
+      setIsSheetOpen(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   if (loading || !isAuthenticated) {
     return (
@@ -108,7 +116,7 @@ export default function DashboardLayout({
 
       <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
         <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-           <Sheet>
+           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
               <Button size="icon" variant="outline" className="sm:hidden">
                 <Menu className="h-5 w-5" />
