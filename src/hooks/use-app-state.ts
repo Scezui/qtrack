@@ -62,7 +62,7 @@ const useAppState = () => {
     });
 
     return () => unsubscribe();
-  }, [firebaseUser, db]);
+  }, [firebaseUser]);
   
   useEffect(() => {
     if (!firebaseUser || !db) {
@@ -85,21 +85,21 @@ const useAppState = () => {
     });
 
     return () => unsubscribe();
-  }, [firebaseUser, db]);
+  }, [firebaseUser]);
 
 
   const addUser = async (name: string, studentId: string) => {
     if (!db) return;
-    const userProfile = JSON.stringify({ name, studentId });
-    const { qrCodeDataUri } = await generateQrCode({ userProfile });
+    const userProfile = { name, studentId };
+    const { qrCodeDataUri } = await generateQrCode({ userProfile: JSON.stringify(userProfile) });
     const newUser = { name, studentId, qrCode: qrCodeDataUri };
     return addDoc(collection(db, "users"), newUser);
   };
 
   const updateUser = async (id: string, name: string, studentId: string) => {
     if (!db) return;
-    const userProfile = JSON.stringify({ name, studentId });
-    const { qrCodeDataUri } = await generateQrCode({ userProfile });
+    const userProfile = { name, studentId };
+    const { qrCodeDataUri } = await generateQrCode({ userProfile: JSON.stringify(userProfile) });
     const userDocRef = doc(db, 'users', id);
     return updateDoc(userDocRef, { name, studentId, qrCode: qrCodeDataUri });
   };
@@ -162,7 +162,7 @@ const useAppState = () => {
       console.error(error);
       return { success: false, message: "Invalid QR code data." };
     }
-  }, [db, toast]);
+  }, [toast]);
   
   const login = async (email: string, pass: string) => {
     setLoading(true);
