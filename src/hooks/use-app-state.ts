@@ -4,21 +4,19 @@ import { useState, useEffect, useCallback } from 'react';
 import type { User, AttendanceLog, AttendanceRecord } from '@/lib/types';
 import { generateQrCode } from '@/ai/flows/generate-qr-code-from-user-profile';
 
-const generateId = () => {
-  // This function should only be called on the client-side.
-  if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
-    return window.crypto.randomUUID();
-  }
-  // Fallback for older browsers or non-browser environments
-  return Math.random().toString(36).substr(2, 9);
-};
-
-
 const useAppState = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [attendanceLog, setAttendanceLog] = useState<AttendanceLog>({});
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const generateId = () => {
+    if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
+      return window.crypto.randomUUID();
+    }
+    // Fallback for older browsers or non-browser environments (though it should only run client-side)
+    return Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+  };
 
   useEffect(() => {
     try {
@@ -88,23 +86,19 @@ const useAppState = () => {
       if (user) {
         const today = new Date().toISOString().split('T')[0];
         
+        const dayLog = attendanceLog[today] || [];
+        if (dayLog.some(record => record.user.id === user.id)) {
+            return { success: false, message: "User already logged in today." };
+        }
+
+        const newRecord: AttendanceRecord = { user, timestamp: new Date().toISOString() };
+        
         setAttendanceLog(prevLog => {
-            const dayLog = prevLog[today] || [];
-            if (dayLog.some(record => record.user.id === user.id)) {
-                // User already logged for today, return failure
-                return prevLog;
-            }
-            const newRecord: AttendanceRecord = { user, timestamp: new Date().toISOString() };
             return {
                 ...prevLog,
-                [today]: [...dayLog, newRecord]
+                [today]: [...(prevLog[today] || []), newRecord]
             };
         });
-
-        const todayLog = attendanceLog[today] || [];
-        if (todayLog.some(record => record.user.id === user.id)) {
-          return { success: false, message: "User already logged in today." };
-        }
 
         return { success: true, user };
       }
