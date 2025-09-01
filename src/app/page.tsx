@@ -15,8 +15,8 @@ import { QrCode, LogIn, Loader2 } from "lucide-react";
 import { useApp } from "@/components/providers";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("admin@qtrack.com");
-  const [password, setPassword] = useState("password");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const { login, loading } = useApp();
 
   const handleLogin = (e: React.FormEvent) => {
@@ -41,7 +41,7 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@qtrack.com"
+                placeholder="admin@example.com"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -52,7 +52,7 @@ export default function LoginPage() {
               <Input
                 id="password"
                 type="password"
-                placeholder="password"
+                placeholder="••••••••"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
