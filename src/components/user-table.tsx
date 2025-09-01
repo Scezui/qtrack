@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, Download } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -63,6 +63,16 @@ export function UserTable() {
     setUserToDelete(null);
   };
 
+  const downloadQrCode = (user: User) => {
+    const link = document.createElement("a");
+    link.href = user.qrCode;
+    link.download = `${user.studentId}-${user.name}-QRCode.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: "QR Code Downloading", description: `The QR code for ${user.name} is downloading.` });
+  };
+
   return (
     <>
       <div className="rounded-lg border shadow-sm">
@@ -100,6 +110,10 @@ export function UserTable() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => downloadQrCode(user)}>
+                          <Download className="mr-2 h-4 w-4" />
+                          Download QR
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleEdit(user)}>
                           <Pencil className="mr-2 h-4 w-4" />
                           Edit
