@@ -47,10 +47,10 @@ const useAppState = () => {
       setLoading(false);
     });
     return () => unsubscribe();
-  }, [router]);
+  }, [auth, router]);
 
   useEffect(() => {
-    if (!firebaseUser) {
+    if (!firebaseUser || !db) {
       setUsers([]);
       return;
     };
@@ -62,10 +62,10 @@ const useAppState = () => {
     });
 
     return () => unsubscribe();
-  }, [firebaseUser]);
+  }, [firebaseUser, db]);
   
   useEffect(() => {
-    if (!firebaseUser) {
+    if (!firebaseUser || !db) {
       setAttendanceLog({});
       return;
     }
@@ -85,10 +85,11 @@ const useAppState = () => {
     });
 
     return () => unsubscribe();
-  }, [firebaseUser]);
+  }, [firebaseUser, db]);
 
 
   const addUser = async (name: string, studentId: string) => {
+    if (!db) return;
     const userProfile = JSON.stringify({ name, studentId });
     const { qrCodeDataUri } = await generateQrCode({ userProfile });
     const newUser = { name, studentId, qrCode: qrCodeDataUri };
@@ -96,6 +97,7 @@ const useAppState = () => {
   };
 
   const updateUser = async (id: string, name: string, studentId: string) => {
+    if (!db) return;
     const userProfile = JSON.stringify({ name, studentId });
     const { qrCodeDataUri } = await generateQrCode({ userProfile });
     const userDocRef = doc(db, 'users', id);
@@ -103,10 +105,12 @@ const useAppState = () => {
   };
 
   const deleteUser = async (id: string) => {
+    if (!db) return;
     await deleteDoc(doc(db, "users", id));
   };
 
   const logAttendance = useCallback(async (scannedData: string) => {
+    if (!db) return { success: false, message: "Database not connected." };
     try {
       const { name, studentId } = JSON.parse(scannedData);
       
@@ -134,10 +138,22 @@ const useAppState = () => {
       const querySnapshot = await getDocs(attendanceQuery);
 
       if (!querySnapshot.empty) {
+          toast({
+            title: 'Already Logged',
+            description: `${user.name} has already been logged for today.`,
+          });
           return { success: false, message: "User already logged in today." };
       }
 
-      const newRecord: Omit<AttendanceRecord, 'id'> = { user, timestamp: new Date() };
+      const newRecord: Omit<AttendanceRecord, 'id'> = { 
+        user: {
+          id: user.id,
+          name: user.name,
+          studentId: user.studentId,
+          qrCode: user.qrCode,
+        }, 
+        timestamp: new Date() 
+      };
       await addDoc(collection(db, 'attendance'), newRecord);
 
       return { success: true, user };
@@ -146,7 +162,7 @@ const useAppState = () => {
       console.error(error);
       return { success: false, message: "Invalid QR code data." };
     }
-  }, []);
+  }, [db, toast]);
   
   const login = async (email: string, pass: string) => {
     setLoading(true);
