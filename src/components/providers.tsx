@@ -8,17 +8,6 @@ type AppContextType = ReturnType<typeof useAppState>;
 
 const AppContext = createContext<AppContextType | null>(null);
 
-const AppProvider = ({ children }: { children: React.ReactNode }) => {
-  const appState = useAppState();
-
-  return (
-    <AppContext.Provider value={appState}>
-      {children}
-      <Toaster />
-    </AppContext.Provider>
-  );
-};
-
 export const useApp = () => {
   const context = useContext(AppContext);
   if (!context) {
@@ -28,5 +17,12 @@ export const useApp = () => {
 };
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  return <AppProvider>{children}</AppProvider>;
+  const appState = useAppState();
+
+  return (
+    <AppContext.Provider value={appState}>
+      {children}
+      <Toaster />
+    </AppContext.Provider>
+  );
 }
