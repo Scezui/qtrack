@@ -11,13 +11,13 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { QrCode, LogIn } from "lucide-react";
+import { QrCode, LogIn, Loader2 } from "lucide-react";
 import { useApp } from "@/components/providers";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const { login } = useApp();
+  const [email, setEmail] = useState("admin@qtrack.com");
+  const [password, setPassword] = useState("password");
+  const { login, loading } = useApp();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,11 +37,11 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Username</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
-                type="text"
-                placeholder="admin"
+                type="email"
+                placeholder="admin@qtrack.com"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -58,8 +58,8 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <Button type="submit" className="w-full">
-              <LogIn className="mr-2 h-4 w-4" />
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
               Login
             </Button>
           </form>

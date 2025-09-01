@@ -6,8 +6,9 @@ export interface User {
 }
 
 export interface AttendanceRecord {
+  id?: string;
   user: User;
-  timestamp: string;
+  timestamp: Date | string;
 }
 
 export type AttendanceLog = Record<string, AttendanceRecord[]>;

@@ -85,7 +85,7 @@ export function AttendanceLog() {
                 <TableBody>
                   {recordsForSelectedDate.length > 0 ? (
                     recordsForSelectedDate.map((record, index) => (
-                      <TableRow key={index}>
+                      <TableRow key={record.id || index}>
                         <TableCell className="font-medium">{record.user.name}</TableCell>
                         <TableCell>{record.user.studentId}</TableCell>
                         <TableCell>{format(new Date(record.timestamp), "HH:mm:ss a")}</TableCell>

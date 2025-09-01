@@ -19,12 +19,12 @@ export function QrScanner() {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   
-  const handleScan = useCallback((data: string) => {
+  const handleScan = useCallback(async (data: string) => {
     if (isProcessing) return;
     setIsProcessing(true);
 
     try {
-        const result = logAttendance(data);
+        const result = await logAttendance(data);
         if(result.success) {
             setShowSuccess(true);
             setTimeout(() => setShowSuccess(false), 1500); 
