@@ -20,11 +20,13 @@ export function AttendanceLog() {
     if (recordsForSelectedDate.length === 0) return;
 
     const headers = ["Name", "Student ID", "Timestamp"];
-    const rows = recordsForSelectedDate.map(record => [
-      `"${record.user.name}"`,
-      `"${record.user.studentId}"`,
-      `"${format(new Date(record.timestamp), "yyyy-MM-dd HH:mm:ss")}"`
-    ]);
+    const rows = recordsForSelectedDate.map(record => {
+      const timestamp = typeof (record.timestamp as any)?.toDate === 'function' ? (record.timestamp as any).toDate() : new Date(record.timestamp);
+      return [
+        `"${record.user.name}"`,
+        `"${record.user.studentId}"`,
+        `"${format(timestamp, "yyyy-MM-dd HH:mm:ss")}"`
+    ]});
 
     const csvContent = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -84,13 +86,18 @@ export function AttendanceLog() {
                 </TableHeader>
                 <TableBody>
                   {recordsForSelectedDate.length > 0 ? (
-                    recordsForSelectedDate.map((record, index) => (
+                    recordsForSelectedDate.map((record, index) => {
+                      const timestamp = typeof (record.timestamp as any)?.toDate === 'function' 
+                        ? (record.timestamp as any).toDate() 
+                        : new Date(record.timestamp);
+                      
+                      return (
                       <TableRow key={record.id || index}>
                         <TableCell className="font-medium">{record.user.name}</TableCell>
                         <TableCell>{record.user.studentId}</TableCell>
-                        <TableCell>{format(new Date(record.timestamp), "HH:mm:ss a")}</TableCell>
+                        <TableCell>{format(timestamp, "HH:mm:ss a")}</TableCell>
                       </TableRow>
-                    ))
+                    )})
                   ) : (
                     <TableRow>
                       <TableCell colSpan={3} className="h-24 text-center">
