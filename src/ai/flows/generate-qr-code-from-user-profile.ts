@@ -10,7 +10,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import QRCode from 'qrcode';
-import * as admin from 'firebase-admin';
+import { getApps, initializeApp } from 'firebase-admin/app';
 
 const GenerateQrCodeInputSchema = z.object({
   userProfile: z
@@ -39,18 +39,10 @@ const generateQrCodeFlow = ai.defineFlow(
     outputSchema: GenerateQrCodeOutputSchema,
   },
   async input => {
-    let qrCodeDataUri: string;
-    if (typeof window === 'undefined') {
-      // Server-side rendering
-      const {getApps, initializeApp} = await import('firebase-admin/app');
-      if (getApps().length === 0) {
-        initializeApp();
-      }
-      qrCodeDataUri = await QRCode.toDataURL(input.userProfile, { width: 512 });
-    } else {
-      // Client-side rendering
-      qrCodeDataUri = await QRCode.toDataURL(input.userProfile, { width: 512 });
+    if (getApps().length === 0) {
+      initializeApp();
     }
+    const qrCodeDataUri = await QRCode.toDataURL(input.userProfile, { width: 512 });
     return { qrCodeDataUri };
   }
 );
