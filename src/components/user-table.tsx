@@ -52,16 +52,12 @@ export function UserTable() {
 
   const sortedUsers = useMemo(() => {
     return [...users].sort((a, b) => {
-      const aValue = a[sortKey]?.toLowerCase() || '';
-      const bValue = b[sortKey]?.toLowerCase() || '';
+      const aValue = a[sortKey] || '';
+      const bValue = b[sortKey] || '';
+      
+      const comparison = aValue.localeCompare(bValue, undefined, { sensitivity: 'base' });
 
-      if (aValue < bValue) {
-        return sortDirection === "asc" ? -1 : 1;
-      }
-      if (aValue > bValue) {
-        return sortDirection === "asc" ? 1 : -1;
-      }
-      return 0;
+      return sortDirection === 'asc' ? comparison : -comparison;
     });
   }, [users, sortKey, sortDirection]);
 
