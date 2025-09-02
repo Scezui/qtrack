@@ -52,8 +52,8 @@ export function UserTable() {
 
   const sortedUsers = useMemo(() => {
     return [...users].sort((a, b) => {
-      const aValue = a[sortKey];
-      const bValue = b[sortKey];
+      const aValue = a[sortKey]?.toLowerCase() || '';
+      const bValue = b[sortKey]?.toLowerCase() || '';
 
       if (aValue < bValue) {
         return sortDirection === "asc" ? -1 : 1;
@@ -119,8 +119,8 @@ export function UserTable() {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[80px]">QR Code</TableHead>
-              <SortableHeader sortKey="firstName" label="First Name" />
               <SortableHeader sortKey="lastName" label="Last Name" />
+              <SortableHeader sortKey="firstName" label="First Name" />
               <SortableHeader sortKey="studentId" label="Student ID" />
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -138,8 +138,8 @@ export function UserTable() {
                       className="rounded-md"
                     />
                   </TableCell>
-                  <TableCell className="font-medium">{user.firstName}</TableCell>
-                  <TableCell>{user.lastName}</TableCell>
+                  <TableCell className="font-medium">{user.lastName}</TableCell>
+                  <TableCell>{user.firstName}</TableCell>
                   <TableCell>{user.studentId}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
