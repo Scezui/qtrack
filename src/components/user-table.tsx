@@ -55,7 +55,7 @@ export function UserTable() {
       const aValue = a[sortKey] || '';
       const bValue = b[sortKey] || '';
       
-      const comparison = aValue.localeCompare(bValue, undefined, { sensitivity: 'base' });
+      const comparison = aValue.localeCompare(bValue);
 
       return sortDirection === 'asc' ? comparison : -comparison;
     });
