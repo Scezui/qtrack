@@ -52,8 +52,8 @@ export function UserTable() {
 
   const sortedUsers = useMemo(() => {
     return [...users].sort((a, b) => {
-      const aValue = a[sortKey] || '';
-      const bValue = b[sortKey] || '';
+      const aValue = (a[sortKey] || '').trim().toLowerCase();
+      const bValue = (b[sortKey] || '').trim().toLowerCase();
       
       const comparison = aValue.localeCompare(bValue);
 
