@@ -30,7 +30,7 @@ export function QrScanner() {
             setTimeout(() => setShowSuccess(false), 1500); 
             toast({
                 title: 'Scan Successful',
-                description: `${result.user?.name} has been logged.`,
+                description: `${result.user?.firstName} ${result.user?.lastName} has been logged.`,
             });
         } else {
             if (result.message !== "User already logged in today.") {

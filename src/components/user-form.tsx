@@ -28,7 +28,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters."),
+  firstName: z.string().min(2, "First name must be at least 2 characters."),
+  lastName: z.string().min(2, "Last name must be at least 2 characters."),
   studentId: z.string().min(1, "Student ID is required."),
 });
 
@@ -47,7 +48,8 @@ export function UserForm({ user, open, onOpenChange, onFinished }: UserFormProps
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
+      firstName: "",
+      lastName: "",
       studentId: "",
     },
   });
@@ -55,7 +57,8 @@ export function UserForm({ user, open, onOpenChange, onFinished }: UserFormProps
   useEffect(() => {
     if (open) {
       form.reset({
-        name: user?.name || "",
+        firstName: user?.firstName || "",
+        lastName: user?.lastName || "",
         studentId: user?.studentId || "",
       });
     }
@@ -65,10 +68,10 @@ export function UserForm({ user, open, onOpenChange, onFinished }: UserFormProps
     setIsSubmitting(true);
     try {
       if (user) {
-        await updateUser(user.id, values.name, values.studentId);
+        await updateUser(user.id, values.firstName, values.lastName, values.studentId);
         toast({ title: "User Updated", description: "The user's details have been updated." });
       } else {
-        await addUser(values.name, values.studentId);
+        await addUser(values.firstName, values.lastName, values.studentId);
         toast({ title: "User Added", description: "A new user has been created." });
       }
       onFinished();
@@ -97,12 +100,25 @@ export function UserForm({ user, open, onOpenChange, onFinished }: UserFormProps
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
             <FormField
               control={form.control}
-              name="name"
+              name="firstName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full Name</FormLabel>
+                  <FormLabel>First Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. John Doe" {...field} />
+                    <Input placeholder="e.g. John" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="lastName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Last Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Doe" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

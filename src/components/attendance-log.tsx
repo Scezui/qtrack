@@ -19,11 +19,12 @@ export function AttendanceLog() {
   const exportToCSV = () => {
     if (recordsForSelectedDate.length === 0) return;
 
-    const headers = ["Name", "Student ID", "Timestamp"];
+    const headers = ["First Name", "Last Name", "Student ID", "Timestamp"];
     const rows = recordsForSelectedDate.map(record => {
       const timestamp = typeof (record.timestamp as any)?.toDate === 'function' ? (record.timestamp as any).toDate() : new Date(record.timestamp);
       return [
-        `"${record.user.name}"`,
+        `"${record.user.firstName}"`,
+        `"${record.user.lastName}"`,
         `"${record.user.studentId}"`,
         `"${format(timestamp, "yyyy-MM-dd HH:mm:ss")}"`
     ]});
@@ -93,7 +94,7 @@ export function AttendanceLog() {
                       
                       return (
                       <TableRow key={record.id || index}>
-                        <TableCell className="font-medium">{record.user.name}</TableCell>
+                        <TableCell className="font-medium">{`${record.user.firstName} ${record.user.lastName}`}</TableCell>
                         <TableCell>{record.user.studentId}</TableCell>
                         <TableCell>{format(timestamp, "HH:mm:ss a")}</TableCell>
                       </TableRow>

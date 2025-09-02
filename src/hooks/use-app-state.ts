@@ -75,11 +75,13 @@ const useAppState = () => {
       const newLog: AttendanceLog = {};
       snapshot.docs.forEach((doc) => {
         const record = doc.data() as AttendanceRecord;
-        const date = (record.timestamp as unknown as Timestamp).toDate().toISOString().split('T')[0];
-        if (!newLog[date]) {
-          newLog[date] = [];
+        if (record.timestamp) {
+            const date = (record.timestamp as unknown as Timestamp).toDate().toISOString().split('T')[0];
+            if (!newLog[date]) {
+              newLog[date] = [];
+            }
+            newLog[date].push({ ...record, id: doc.id });
         }
-        newLog[date].push({ ...record, id: doc.id });
       });
       setAttendanceLog(newLog);
     });
@@ -88,20 +90,20 @@ const useAppState = () => {
   }, [firebaseUser]);
 
 
-  const addUser = async (name: string, studentId: string) => {
+  const addUser = async (firstName: string, lastName: string, studentId: string) => {
     if (!db) return;
-    const userProfile = { name, studentId };
+    const userProfile = { firstName, lastName, studentId };
     const { qrCodeDataUri } = await generateQrCode({ userProfile: JSON.stringify(userProfile) });
-    const newUser = { name, studentId, qrCode: qrCodeDataUri };
+    const newUser = { firstName, lastName, studentId, qrCode: qrCodeDataUri };
     return addDoc(collection(db, "users"), newUser);
   };
 
-  const updateUser = async (id: string, name: string, studentId: string) => {
+  const updateUser = async (id: string, firstName: string, lastName: string, studentId: string) => {
     if (!db) return;
-    const userProfile = { name, studentId };
+    const userProfile = { firstName, lastName, studentId };
     const { qrCodeDataUri } = await generateQrCode({ userProfile: JSON.stringify(userProfile) });
     const userDocRef = doc(db, 'users', id);
-    return updateDoc(userDocRef, { name, studentId, qrCode: qrCodeDataUri });
+    return updateDoc(userDocRef, { firstName, lastName, studentId, qrCode: qrCodeDataUri });
   };
 
   const deleteUser = async (id: string) => {
@@ -112,9 +114,14 @@ const useAppState = () => {
   const logAttendance = useCallback(async (scannedData: string) => {
     if (!db) return { success: false, message: "Database not connected." };
     try {
-      const { name, studentId } = JSON.parse(scannedData);
+      const { firstName, lastName, studentId } = JSON.parse(scannedData);
       
-      const usersQuery = query(collection(db, 'users'), where('studentId', '==', studentId), where('name', '==', name));
+      const usersQuery = query(
+        collection(db, 'users'), 
+        where('studentId', '==', studentId), 
+        where('firstName', '==', firstName),
+        where('lastName', '==', lastName)
+      );
       const userSnapshot = await getDocs(usersQuery);
 
       if (userSnapshot.empty) {
@@ -135,6 +142,7 @@ const useAppState = () => {
       const querySnapshot = await getDocs(attendanceQuery);
       const todayEntry = querySnapshot.docs.find(doc => {
         const record = doc.data() as AttendanceRecord;
+        if (!record.timestamp) return false;
         const recordDate = (record.timestamp as unknown as Timestamp).toDate();
         return recordDate >= startOfDay;
       })
@@ -143,7 +151,7 @@ const useAppState = () => {
       if (todayEntry) {
           toast({
             title: 'Already Logged',
-            description: `${user.name} has already been logged for today.`,
+            description: `${user.firstName} ${user.lastName} has already been logged for today.`,
           });
           return { success: false, message: "User already logged in today." };
       }
@@ -151,7 +159,8 @@ const useAppState = () => {
       const newRecord: Omit<AttendanceRecord, 'id'> = { 
         user: {
           id: user.id,
-          name: user.name,
+          firstName: user.firstName,
+          lastName: user.lastName,
           studentId: user.studentId,
           qrCode: user.qrCode,
         }, 

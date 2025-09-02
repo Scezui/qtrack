@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Image from "next/image";
 import {
   Table,
@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Pencil, Trash2, Download } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, Download, ArrowUpDown } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +36,9 @@ import { UserForm } from "@/components/user-form";
 import type { User } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 
+type SortKey = "firstName" | "lastName" | "studentId";
+type SortDirection = "asc" | "desc";
+
 export function UserTable() {
   const { users, deleteUser } = useApp();
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -43,6 +46,33 @@ export function UserTable() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const { toast } = useToast();
+  
+  const [sortKey, setSortKey] = useState<SortKey>("lastName");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+
+  const sortedUsers = useMemo(() => {
+    return [...users].sort((a, b) => {
+      const aValue = a[sortKey];
+      const bValue = b[sortKey];
+
+      if (aValue < bValue) {
+        return sortDirection === "asc" ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortDirection === "asc" ? 1 : -1;
+      }
+      return 0;
+    });
+  }, [users, sortKey, sortDirection]);
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortDirection("asc");
+    }
+  };
 
   const handleEdit = (user: User) => {
     setSelectedUser(user);
@@ -57,7 +87,7 @@ export function UserTable() {
   const confirmDelete = () => {
     if (userToDelete) {
       deleteUser(userToDelete.id);
-      toast({ title: "User Deleted", description: `User ${userToDelete.name} has been removed.` });
+      toast({ title: "User Deleted", description: `User ${userToDelete.firstName} ${userToDelete.lastName} has been removed.` });
     }
     setIsAlertOpen(false);
     setUserToDelete(null);
@@ -66,12 +96,21 @@ export function UserTable() {
   const downloadQrCode = (user: User) => {
     const link = document.createElement("a");
     link.href = user.qrCode;
-    link.download = `${user.studentId}-${user.name}-QRCode.png`;
+    link.download = `${user.studentId}-${user.firstName}-${user.lastName}-QRCode.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast({ title: "QR Code Downloading", description: `The QR code for ${user.name} is downloading.` });
+    toast({ title: "QR Code Downloading", description: `The QR code for ${user.firstName} ${user.lastName} is downloading.` });
   };
+
+  const SortableHeader = ({ sortKey: key, label }: { sortKey: SortKey, label: string }) => (
+    <TableHead>
+      <Button variant="ghost" onClick={() => handleSort(key)}>
+        {label}
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    </TableHead>
+  );
 
   return (
     <>
@@ -80,25 +119,27 @@ export function UserTable() {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[80px]">QR Code</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Student ID</TableHead>
+              <SortableHeader sortKey="firstName" label="First Name" />
+              <SortableHeader sortKey="lastName" label="Last Name" />
+              <SortableHeader sortKey="studentId" label="Student ID" />
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.length > 0 ? (
-              users.map((user) => (
+            {sortedUsers.length > 0 ? (
+              sortedUsers.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
                     <Image
                       src={user.qrCode}
-                      alt={`QR Code for ${user.name}`}
+                      alt={`QR Code for ${user.firstName} ${user.lastName}`}
                       width={60}
                       height={60}
                       className="rounded-md"
                     />
                   </TableCell>
-                  <TableCell className="font-medium">{user.name}</TableCell>
+                  <TableCell className="font-medium">{user.firstName}</TableCell>
+                  <TableCell>{user.lastName}</TableCell>
                   <TableCell>{user.studentId}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -130,7 +171,7 @@ export function UserTable() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center">
+                <TableCell colSpan={5} className="h-24 text-center">
                   No users found. Add a user to get started.
                 </TableCell>
               </TableRow>
