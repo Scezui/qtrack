@@ -34,6 +34,7 @@ import { useApp } from "@/components/providers";
 import { UserForm } from "@/components/user-form";
 import type { User } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import { QrCodeView } from "./qr-code-view";
 
 type SortKey = "firstName" | "lastName" | "studentId";
 type SortDirection = "asc" | "desc";
@@ -46,7 +47,9 @@ export function UserTable({ users: initialUsers }: UserTableProps) {
   const { deleteUser, users: allUsers } = useApp();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [isQrViewOpen, setIsQrViewOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [userToView, setUserToView] = useState<User | null>(null);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const { toast } = useToast();
   
@@ -83,6 +86,11 @@ export function UserTable({ users: initialUsers }: UserTableProps) {
   const handleDeleteClick = (user: User) => {
     setUserToDelete(user);
     setIsAlertOpen(true);
+  }
+
+  const handleViewQr = (user: User) => {
+    setUserToView(user);
+    setIsQrViewOpen(true);
   }
 
   const confirmDelete = () => {
@@ -131,13 +139,15 @@ export function UserTable({ users: initialUsers }: UserTableProps) {
               sortedUsers.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
-                    <Image
-                      src={user.qrCode}
-                      alt={`QR Code for ${user.firstName} ${user.lastName}`}
-                      width={60}
-                      height={60}
-                      className="rounded-md"
-                    />
+                    <button onClick={() => handleViewQr(user)} className="cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-md">
+                      <Image
+                        src={user.qrCode}
+                        alt={`QR Code for ${user.firstName} ${user.lastName}`}
+                        width={60}
+                        height={60}
+                        className="rounded-md"
+                      />
+                    </button>
                   </TableCell>
                   <TableCell className="font-medium">{user.lastName}</TableCell>
                   <TableCell>{user.firstName}</TableCell>
@@ -204,6 +214,12 @@ export function UserTable({ users: initialUsers }: UserTableProps) {
         onOpenChange={setIsFormOpen}
         onFinished={() => setSelectedUser(null)}
         defaultRoomId={selectedUser?.roomId}
+      />
+      
+      <QrCodeView
+        user={userToView}
+        open={isQrViewOpen}
+        onOpenChange={setIsQrViewOpen}
       />
 
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
