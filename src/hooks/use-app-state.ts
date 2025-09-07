@@ -25,7 +25,7 @@ import {
   User as FirebaseUser
 } from 'firebase/auth';
 
-type UserData = Omit<User, 'id' | 'qrCode'>;
+type UserData = Omit<User, 'id' | 'qrCode' | 'adminId'>;
 
 const useAppState = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -45,6 +45,9 @@ const useAppState = () => {
       } else {
         setIsAuthenticated(false);
         setFirebaseUser(null);
+        setUsers([]);
+        setRooms([]);
+        setAttendanceLog({});
         router.push('/');
       }
       setLoading(false);
@@ -55,36 +58,41 @@ const useAppState = () => {
   useEffect(() => {
     if (!firebaseUser || !db) {
       setUsers([]);
-      setRooms([]);
       return;
     };
 
-    const usersCollection = collection(db, "users");
-    const usersUnsubscribe = onSnapshot(usersCollection, (snapshot) => {
+    const usersQuery = query(collection(db, "users"), where("adminId", "==", firebaseUser.uid));
+    const usersUnsubscribe = onSnapshot(usersQuery, (snapshot) => {
       const usersData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as User[];
       setUsers(usersData);
     });
 
-    const roomsCollection = collection(db, "rooms");
-    const roomsUnsubscribe = onSnapshot(roomsCollection, (snapshot) => {
+    return () => usersUnsubscribe();
+  }, [firebaseUser]);
+  
+  useEffect(() => {
+    if (!firebaseUser || !db) {
+      setRooms([]);
+      return;
+    };
+    
+    const roomsQuery = query(collection(db, "rooms"), where("adminId", "==", firebaseUser.uid));
+    const roomsUnsubscribe = onSnapshot(roomsQuery, (snapshot) => {
       const roomsData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Room[];
       setRooms(roomsData);
     });
 
-    return () => {
-      usersUnsubscribe();
-      roomsUnsubscribe();
-    };
+    return () => roomsUnsubscribe();
   }, [firebaseUser]);
-  
+
   useEffect(() => {
     if (!firebaseUser || !db) {
       setAttendanceLog({});
       return;
     }
 
-    const attendanceCollection = collection(db, 'attendance');
-    const unsubscribe = onSnapshot(attendanceCollection, (snapshot) => {
+    const attendanceQuery = query(collection(db, 'attendance'), where("adminId", "==", firebaseUser.uid));
+    const unsubscribe = onSnapshot(attendanceQuery, (snapshot) => {
       const newLog: AttendanceLog = {};
       snapshot.docs.forEach((doc) => {
         const record = doc.data() as AttendanceRecord;
@@ -104,10 +112,10 @@ const useAppState = () => {
 
 
   const addUser = async (userData: UserData) => {
-    if (!db) return;
+    if (!db || !firebaseUser) return;
     const userProfile = { firstName: userData.firstName, lastName: userData.lastName, studentId: userData.studentId };
     const { qrCodeDataUri } = await generateQrCode({ userProfile: JSON.stringify(userProfile) });
-    const newUser = { ...userData, qrCode: qrCodeDataUri };
+    const newUser = { ...userData, qrCode: qrCodeDataUri, adminId: firebaseUser.uid };
     return addDoc(collection(db, "users"), newUser);
   };
 
@@ -116,6 +124,7 @@ const useAppState = () => {
     const userProfile = { firstName: userData.firstName, lastName: userData.lastName, studentId: userData.studentId };
     const { qrCodeDataUri } = await generateQrCode({ userProfile: JSON.stringify(userProfile) });
     const userDocRef = doc(db, 'users', id);
+    // adminId is not updated as it's immutable
     return updateDoc(userDocRef, { ...userData, qrCode: qrCodeDataUri });
   };
 
@@ -125,26 +134,25 @@ const useAppState = () => {
   };
 
   const addRoom = async (name: string) => {
-    if (!db) return;
-    return addDoc(collection(db, "rooms"), { name });
+    if (!db || !firebaseUser) return;
+    return addDoc(collection(db, "rooms"), { name, adminId: firebaseUser.uid });
   };
 
   const updateRoom = async (id: string, name: string) => {
     if (!db) return;
     const roomDocRef = doc(db, 'rooms', id);
+    // adminId is not updated as it's immutable
     return updateDoc(roomDocRef, { name });
   };
 
   const deleteRoom = async (id: string) => {
     if (!db) return;
-    // TODO: Consider what to do with users in this room. 
-    // For now, we just delete the room.
     await deleteDoc(doc(db, "rooms", id));
   };
 
 
   const logAttendance = useCallback(async (scannedData: string, roomId?: string) => {
-    if (!db) return { success: false, message: "Database not connected." };
+    if (!db || !firebaseUser) return { success: false, message: "Database not connected." };
     try {
       const { firstName, lastName, studentId } = JSON.parse(scannedData);
       
@@ -152,7 +160,8 @@ const useAppState = () => {
         collection(db, 'users'), 
         where('studentId', '==', studentId), 
         where('firstName', '==', firstName),
-        where('lastName', '==', lastName)
+        where('lastName', '==', lastName),
+        where('adminId', '==', firebaseUser.uid)
       );
       const userSnapshot = await getDocs(usersQuery);
 
@@ -163,7 +172,6 @@ const useAppState = () => {
       const userDoc = userSnapshot.docs[0];
       const user = { ...userDoc.data(), id: userDoc.id } as User;
       
-      // If scanning within a room context, check if user belongs to the room
       if (roomId && user.roomId !== roomId) {
         return { success: false, message: `User does not belong to this room.` };
       }
@@ -173,7 +181,8 @@ const useAppState = () => {
       
       const attendanceQuery = query(
         collection(db, 'attendance'),
-        where('user.id', '==', user.id)
+        where('user.id', '==', user.id),
+        where('adminId', '==', firebaseUser.uid)
       );
       
       const querySnapshot = await getDocs(attendanceQuery);
@@ -200,9 +209,11 @@ const useAppState = () => {
           lastName: user.lastName,
           studentId: user.studentId,
           qrCode: user.qrCode,
+          adminId: firebaseUser.uid,
         }, 
         timestamp: new Date(),
-        roomId: roomId || user.roomId, // Log the specific room if provided, otherwise the user's default room
+        roomId: roomId || user.roomId,
+        adminId: firebaseUser.uid,
       };
       
       await addDoc(collection(db, 'attendance'), newRecord);
@@ -213,7 +224,7 @@ const useAppState = () => {
       console.error(error);
       return { success: false, message: "Invalid QR code data." };
     }
-  }, [toast]);
+  }, [toast, firebaseUser, db]);
   
   const login = async (email: string, pass: string) => {
     setLoading(true);
