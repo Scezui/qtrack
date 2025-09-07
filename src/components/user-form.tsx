@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -72,12 +73,16 @@ export function UserForm({ user, open, onOpenChange, onFinished, defaultRoomId }
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
+    const submissionValues = {
+        ...values,
+        roomId: values.roomId === 'none' ? '' : values.roomId
+    }
     try {
       if (user) {
-        await updateUser(user.id, values);
+        await updateUser(user.id, submissionValues);
         toast({ title: "User Updated", description: "The user's details have been updated." });
       } else {
-        await addUser(values);
+        await addUser(submissionValues);
         toast({ title: "User Added", description: "A new user has been created." });
       }
       onFinished();
@@ -149,14 +154,14 @@ export function UserForm({ user, open, onOpenChange, onFinished, defaultRoomId }
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Room</FormLabel>
-                   <Select onValueChange={field.onChange} defaultValue={field.value}>
+                   <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Assign to a room" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">-- Not Assigned --</SelectItem>
+                      <SelectItem value="none">-- Not Assigned --</SelectItem>
                       {rooms.map(room => (
                         <SelectItem key={room.id} value={room.id}>{room.name}</SelectItem>
                       ))}
