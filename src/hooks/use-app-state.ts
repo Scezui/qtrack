@@ -18,7 +18,8 @@ import {
   query,
   where,
   getDocs,
-  Timestamp
+  Timestamp,
+  writeBatch
 } from 'firebase/firestore';
 import { 
   onAuthStateChanged, 
@@ -237,6 +238,36 @@ const useAppState = () => {
       return { success: false, message: "Invalid or corrupt QR code data." };
     }
   }, [toast, firebaseUser, db]);
+
+  const refreshAllQrCodes = async () => {
+    if (!db || !firebaseUser) {
+      toast({ variant: "destructive", title: "Error", description: "You must be logged in to perform this action." });
+      return;
+    }
+    
+    toast({ title: "Refreshing QR Codes", description: "This may take a few moments..." });
+
+    try {
+      const batch = writeBatch(db);
+      for (const user of users) {
+        const userProfile = { 
+          firstName: user.firstName, 
+          lastName: user.lastName, 
+          studentId: user.studentId,
+          roomId: user.roomId,
+        };
+        const { qrCodeDataUri } = await generateQrCode({ userProfile: JSON.stringify(userProfile) });
+        
+        const userDocRef = doc(db, 'users', user.id);
+        batch.update(userDocRef, { qrCode: qrCodeDataUri });
+      }
+      await batch.commit();
+      toast({ title: "Success", description: "All QR codes have been refreshed." });
+    } catch(error) {
+      console.error("Failed to refresh QR codes: ", error);
+      toast({ variant: "destructive", title: "Refresh Failed", description: "An error occurred while refreshing the QR codes." });
+    }
+  };
   
   const login = async (email: string, pass: string) => {
     setLoading(true);
@@ -269,6 +300,7 @@ const useAppState = () => {
     deleteRoom,
     attendanceLog,
     logAttendance,
+    refreshAllQrCodes,
     loading,
     isAuthenticated,
     login,
