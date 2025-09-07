@@ -83,7 +83,7 @@ export default function RoomPage() {
           <TabsTrigger value="scan"><ScanLine className="mr-2"/>Scan QR</TabsTrigger>
         </TabsList>
         <TabsContent value="users" className="mt-4">
-            <UserTable users={roomUsers} />
+            <UserTable users={roomUsers} showActions={true} />
         </TabsContent>
         <TabsContent value="attendance" className="mt-4">
             <AttendanceLog attendanceLog={roomAttendanceLog} />

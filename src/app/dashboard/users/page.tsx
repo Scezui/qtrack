@@ -56,7 +56,7 @@ export default function AllUsersPage() {
         </div>
       </div>
       
-      <UserTable users={users} />
+      <UserTable users={users} showActions={false} />
 
       <UserForm
         user={null}

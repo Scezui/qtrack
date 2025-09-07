@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, Download, ArrowUpDown } from "lucide-react";
+import { Pencil, Trash2, Download, ArrowUpDown, GripVertical } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,19 +32,21 @@ import {
 
 import { useApp } from "@/components/providers";
 import { UserForm } from "@/components/user-form";
-import type { User } from "@/lib/types";
+import type { User, Room } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { QrCodeView } from "./qr-code-view";
+import { Badge } from "./ui/badge";
 
-type SortKey = "firstName" | "lastName" | "studentId";
+type SortKey = "firstName" | "lastName" | "studentId" | "roomName";
 type SortDirection = "asc" | "desc";
 
 interface UserTableProps {
     users: User[];
+    showActions?: boolean;
 }
 
-export function UserTable({ users: initialUsers }: UserTableProps) {
-  const { deleteUser, users: allUsers } = useApp();
+export function UserTable({ users: initialUsers, showActions = true }: UserTableProps) {
+  const { deleteUser, users: allUsers, rooms } = useApp();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isQrViewOpen, setIsQrViewOpen] = useState(false);
@@ -58,16 +60,31 @@ export function UserTable({ users: initialUsers }: UserTableProps) {
 
   const users = initialUsers || allUsers;
 
+  const roomMap = useMemo(() => {
+    return rooms.reduce((acc, room) => {
+      acc[room.id] = room.name;
+      return acc;
+    }, {} as Record<string, string>);
+  }, [rooms]);
+
   const sortedUsers = useMemo(() => {
     return [...users].sort((a, b) => {
-      const aValue = (a[sortKey] || '').trim().toLowerCase();
-      const bValue = (b[sortKey] || '').trim().toLowerCase();
+      let aValue: string | undefined;
+      let bValue: string | undefined;
+
+      if (sortKey === 'roomName') {
+        aValue = a.roomId ? roomMap[a.roomId] : '';
+        bValue = b.roomId ? roomMap[b.roomId] : '';
+      } else {
+        aValue = a[sortKey];
+        bValue = b[sortKey];
+      }
       
-      const comparison = aValue.localeCompare(bValue);
+      const comparison = (aValue || '').trim().toLowerCase().localeCompare((bValue || '').trim().toLowerCase());
 
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [users, sortKey, sortDirection]);
+  }, [users, sortKey, sortDirection, roomMap]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -131,7 +148,8 @@ export function UserTable({ users: initialUsers }: UserTableProps) {
               <SortableHeader sortKey="lastName" label="Last Name" />
               <SortableHeader sortKey="firstName" label="First Name" />
               <SortableHeader sortKey="studentId" label="Student ID" />
-              <TableHead className="text-right w-[140px]">Actions</TableHead>
+              <SortableHeader sortKey="roomName" label="Room" />
+              {showActions && <TableHead className="text-right w-[140px]">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -153,54 +171,63 @@ export function UserTable({ users: initialUsers }: UserTableProps) {
                   <TableCell>{user.firstName}</TableCell>
                   <TableCell>{user.studentId}</TableCell>
                   <TableCell>
-                    <div className="flex items-center justify-end gap-2">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={() => downloadQrCode(user)}>
-                              <Download className="h-4 w-4" />
-                              <span className="sr-only">Download QR</span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Download QR</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={() => handleEdit(user)}>
-                              <Pencil className="h-4 w-4" />
-                              <span className="sr-only">Edit User</span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Edit User</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(user)} className="text-destructive hover:text-destructive focus:text-destructive">
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">Delete User</span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Delete User</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
+                    {user.roomId && roomMap[user.roomId] ? (
+                      <Badge variant="secondary">{roomMap[user.roomId]}</Badge>
+                    ) : (
+                      <span className="text-muted-foreground">Not Assigned</span>
+                    )}
                   </TableCell>
+                  {showActions && (
+                    <TableCell>
+                      <div className="flex items-center justify-end gap-2">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => downloadQrCode(user)}>
+                                <Download className="h-4 w-4" />
+                                <span className="sr-only">Download QR</span>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Download QR</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => handleEdit(user)}>
+                                <Pencil className="h-4 w-4" />
+                                <span className="sr-only">Edit User</span>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Edit User</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(user)} className="text-destructive hover:text-destructive focus:text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Delete User</span>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Delete User</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
-                  No users found in this room.
+                <TableCell colSpan={showActions ? 6 : 5} className="h-24 text-center">
+                  No users found.
                 </TableCell>
               </TableRow>
             )}
