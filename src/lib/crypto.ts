@@ -3,16 +3,16 @@
 
 import CryptoJS from 'crypto-js';
 
-const secretKey = process.env.NEXT_PUBLIC_CRYPTO_SECRET_KEY;
+const secretKey = process.env.NEXT_CRYPTO_SECRET_KEY;
 
 if (!secretKey) {
-  throw new Error('NEXT_PUBLIC_CRYPTO_SECRET_KEY is not defined in the environment variables.');
+  throw new Error('NEXT_CRYPTO_SECRET_KEY is not defined in the environment variables.');
 }
 
 // Ensure the secret key is of a valid length for AES-256 (32 bytes)
 const ensuredKey = CryptoJS.enc.Utf8.parse(secretKey.padEnd(32, ' ').slice(0, 32));
 
-export function encrypt(text: string): string {
+export async function encrypt(text: string): Promise<string> {
   const iv = CryptoJS.lib.WordArray.random(16); // Generate a random 16-byte IV
   const encrypted = CryptoJS.AES.encrypt(text, ensuredKey, {
     iv: iv,
@@ -23,7 +23,7 @@ export function encrypt(text: string): string {
   return iv.toString(CryptoJS.enc.Hex) + encrypted.toString();
 }
 
-export function decrypt(ciphertext: string): string {
+export async function decrypt(ciphertext: string): Promise<string> {
   try {
     const iv = CryptoJS.enc.Hex.parse(ciphertext.slice(0, 32));
     const encryptedText = ciphertext.slice(32);

@@ -164,7 +164,7 @@ const useAppState = () => {
   const logAttendance = useCallback(async (scannedData: string, roomId?: string) => {
     if (!db || !firebaseUser) return { success: false, message: "Database not connected." };
     try {
-      const decryptedData = decrypt(scannedData);
+      const decryptedData = await decrypt(scannedData);
       const { firstName, lastName, studentId, roomId: userRoomId } = JSON.parse(decryptedData);
       
       const usersQuery = query(
