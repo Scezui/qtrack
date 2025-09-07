@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import type { User, AttendanceLog, AttendanceRecord } from '@/lib/types';
+import type { User, AttendanceLog, AttendanceRecord, Room } from '@/lib/types';
 import { generateQrCode } from '@/ai/flows/generate-qr-code-from-user-profile';
 import { useRouter } from 'next/navigation';
 import { useToast } from './use-toast';
@@ -27,6 +27,7 @@ import {
 
 const useAppState = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [attendanceLog, setAttendanceLog] = useState<AttendanceLog>({});
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -52,16 +53,26 @@ const useAppState = () => {
   useEffect(() => {
     if (!firebaseUser || !db) {
       setUsers([]);
+      setRooms([]);
       return;
     };
 
     const usersCollection = collection(db, "users");
-    const unsubscribe = onSnapshot(usersCollection, (snapshot) => {
+    const usersUnsubscribe = onSnapshot(usersCollection, (snapshot) => {
       const usersData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as User[];
       setUsers(usersData);
     });
 
-    return () => unsubscribe();
+    const roomsCollection = collection(db, "rooms");
+    const roomsUnsubscribe = onSnapshot(roomsCollection, (snapshot) => {
+      const roomsData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Room[];
+      setRooms(roomsData);
+    });
+
+    return () => {
+      usersUnsubscribe();
+      roomsUnsubscribe();
+    };
   }, [firebaseUser]);
   
   useEffect(() => {
@@ -110,6 +121,25 @@ const useAppState = () => {
     if (!db) return;
     await deleteDoc(doc(db, "users", id));
   };
+
+  const addRoom = async (name: string) => {
+    if (!db) return;
+    return addDoc(collection(db, "rooms"), { name });
+  };
+
+  const updateRoom = async (id: string, name: string) => {
+    if (!db) return;
+    const roomDocRef = doc(db, 'rooms', id);
+    return updateDoc(roomDocRef, { name });
+  };
+
+  const deleteRoom = async (id: string) => {
+    if (!db) return;
+    // TODO: Consider what to do with users in this room. 
+    // For now, we just delete the room.
+    await deleteDoc(doc(db, "rooms", id));
+  };
+
 
   const logAttendance = useCallback(async (scannedData: string) => {
     if (!db) return { success: false, message: "Database not connected." };
@@ -201,6 +231,10 @@ const useAppState = () => {
     addUser,
     updateUser,
     deleteUser,
+    rooms,
+    addRoom,
+    updateRoom,
+    deleteRoom,
     attendanceLog,
     logAttendance,
     loading,
