@@ -1,8 +1,10 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
 import type { User, AttendanceLog, AttendanceRecord, Room } from '@/lib/types';
 import { generateQrCode } from '@/ai/flows/generate-qr-code-from-user-profile';
+import { decrypt } from '@/lib/crypto';
 import { useRouter } from 'next/navigation';
 import { useToast } from './use-toast';
 import { db, auth } from '@/lib/firebase';
@@ -113,7 +115,12 @@ const useAppState = () => {
 
   const addUser = async (userData: UserData) => {
     if (!db || !firebaseUser) return;
-    const userProfile = { firstName: userData.firstName, lastName: userData.lastName, studentId: userData.studentId };
+    const userProfile = { 
+      firstName: userData.firstName, 
+      lastName: userData.lastName, 
+      studentId: userData.studentId,
+      roomId: userData.roomId,
+    };
     const { qrCodeDataUri } = await generateQrCode({ userProfile: JSON.stringify(userProfile) });
     const newUser = { ...userData, qrCode: qrCodeDataUri, adminId: firebaseUser.uid };
     return addDoc(collection(db, "users"), newUser);
@@ -121,10 +128,14 @@ const useAppState = () => {
 
   const updateUser = async (id: string, userData: UserData) => {
     if (!db) return;
-    const userProfile = { firstName: userData.firstName, lastName: userData.lastName, studentId: userData.studentId };
+    const userProfile = { 
+        firstName: userData.firstName, 
+        lastName: userData.lastName, 
+        studentId: userData.studentId,
+        roomId: userData.roomId
+    };
     const { qrCodeDataUri } = await generateQrCode({ userProfile: JSON.stringify(userProfile) });
     const userDocRef = doc(db, 'users', id);
-    // adminId is not updated as it's immutable
     return updateDoc(userDocRef, { ...userData, qrCode: qrCodeDataUri });
   };
 
@@ -141,7 +152,6 @@ const useAppState = () => {
   const updateRoom = async (id: string, name: string) => {
     if (!db) return;
     const roomDocRef = doc(db, 'rooms', id);
-    // adminId is not updated as it's immutable
     return updateDoc(roomDocRef, { name });
   };
 
@@ -154,7 +164,8 @@ const useAppState = () => {
   const logAttendance = useCallback(async (scannedData: string, roomId?: string) => {
     if (!db || !firebaseUser) return { success: false, message: "Database not connected." };
     try {
-      const { firstName, lastName, studentId } = JSON.parse(scannedData);
+      const decryptedData = decrypt(scannedData);
+      const { firstName, lastName, studentId, roomId: userRoomId } = JSON.parse(decryptedData);
       
       const usersQuery = query(
         collection(db, 'users'), 
@@ -210,6 +221,7 @@ const useAppState = () => {
           studentId: user.studentId,
           qrCode: user.qrCode,
           adminId: firebaseUser.uid,
+          roomId: user.roomId
         }, 
         timestamp: new Date(),
         roomId: roomId || user.roomId,
@@ -222,7 +234,7 @@ const useAppState = () => {
       
     } catch (error) {
       console.error(error);
-      return { success: false, message: "Invalid QR code data." };
+      return { success: false, message: "Invalid or corrupt QR code data." };
     }
   }, [toast, firebaseUser, db]);
   

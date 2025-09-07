@@ -1,18 +1,27 @@
+
 export interface User {
   id: string;
   firstName: string;
   lastName: string;
   studentId: string;
   qrCode: string;
-  roomId?: string; // Add roomId to User
+  roomId?: string;
   adminId: string;
 }
 
 export interface AttendanceRecord {
   id?: string;
-  user: User;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    studentId: string;
+    qrCode: string;
+    roomId?: string;
+    adminId: string;
+  };
   timestamp: Date | string;
-  roomId?: string; // Add roomId to AttendanceRecord
+  roomId?: string;
   adminId: string;
 }
 

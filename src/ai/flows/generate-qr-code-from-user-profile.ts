@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Generates a QR code from user profile data.
@@ -10,6 +11,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import QRCode from 'qrcode';
+import { encrypt } from '@/lib/crypto';
 
 const GenerateQrCodeInputSchema = z.object({
   userProfile: z
@@ -38,7 +40,8 @@ const generateQrCodeFlow = ai.defineFlow(
     outputSchema: GenerateQrCodeOutputSchema,
   },
   async input => {
-    const qrCodeDataUri = await QRCode.toDataURL(input.userProfile, { width: 512 });
+    const encryptedProfile = encrypt(input.userProfile);
+    const qrCodeDataUri = await QRCode.toDataURL(encryptedProfile, { width: 512 });
     return { qrCodeDataUri };
   }
 );
