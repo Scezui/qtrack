@@ -100,7 +100,11 @@ const useAppState = () => {
       snapshot.docs.forEach((doc) => {
         const record = doc.data() as AttendanceRecord;
         if (record.timestamp) {
-            const date = (record.timestamp as unknown as Timestamp).toDate().toISOString().split('T')[0];
+            const recordDate = (record.timestamp as unknown as Timestamp).toDate();
+            // Adjust for timezone offset before getting the date string
+            const tzAdjustedDate = new Date(recordDate.getTime() - (recordDate.getTimezoneOffset() * 60000));
+            const date = tzAdjustedDate.toISOString().split('T')[0];
+
             if (!newLog[date]) {
               newLog[date] = [];
             }
@@ -265,7 +269,7 @@ const useAppState = () => {
       toast({ title: "Success", description: "All QR codes have been refreshed." });
     } catch(error) {
       console.error("Failed to refresh QR codes: ", error);
-      toast({ variant: "destructive", title: "Refresh Failed", description: "An error occurred while refreshing the QR codes." });
+      toast({ variant: "destructive", title: "Refresh Failed", description: "An error occurred while refreshing a QR code." });
     }
   };
   
