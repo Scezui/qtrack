@@ -7,11 +7,14 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Download } from "lucide-react";
-import { useApp } from "@/components/providers";
+import type { AttendanceLog as AttendanceLogType } from "@/lib/types";
 
-export function AttendanceLog() {
+interface AttendanceLogProps {
+    attendanceLog: AttendanceLogType;
+}
+
+export function AttendanceLog({ attendanceLog }: AttendanceLogProps) {
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const { attendanceLog } = useApp();
 
   const selectedDateString = date ? format(date, "yyyy-MM-dd") : "";
   const recordsForSelectedDate = attendanceLog[selectedDateString] || [];

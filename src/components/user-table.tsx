@@ -39,8 +39,12 @@ import { useToast } from "@/hooks/use-toast";
 type SortKey = "firstName" | "lastName" | "studentId";
 type SortDirection = "asc" | "desc";
 
-export function UserTable() {
-  const { users, deleteUser } = useApp();
+interface UserTableProps {
+    users: User[];
+}
+
+export function UserTable({ users: initialUsers }: UserTableProps) {
+  const { deleteUser, users: allUsers } = useApp();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -49,6 +53,8 @@ export function UserTable() {
   
   const [sortKey, setSortKey] = useState<SortKey>("lastName");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+
+  const users = initialUsers || allUsers;
 
   const sortedUsers = useMemo(() => {
     return [...users].sort((a, b) => {
@@ -92,7 +98,7 @@ export function UserTable() {
   const downloadQrCode = (user: User) => {
     const link = document.createElement("a");
     link.href = user.qrCode;
-    link.download = `${user.studentId}-${user.firstName}-${user.lastName}-QRCode.png`;
+    link.download = `${user.studentId}-${user.lastName}-${user.firstName}-QRCode.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -168,7 +174,7 @@ export function UserTable() {
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center">
-                  No users found. Add a user to get started.
+                  No users found in this room.
                 </TableCell>
               </TableRow>
             )}
@@ -181,6 +187,7 @@ export function UserTable() {
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
         onFinished={() => setSelectedUser(null)}
+        defaultRoomId={selectedUser?.roomId}
       />
 
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>

@@ -25,6 +25,8 @@ import {
   User as FirebaseUser
 } from 'firebase/auth';
 
+type UserData = Omit<User, 'id' | 'qrCode'>;
+
 const useAppState = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -101,20 +103,20 @@ const useAppState = () => {
   }, [firebaseUser]);
 
 
-  const addUser = async (firstName: string, lastName: string, studentId: string) => {
+  const addUser = async (userData: UserData) => {
     if (!db) return;
-    const userProfile = { firstName, lastName, studentId };
+    const userProfile = { firstName: userData.firstName, lastName: userData.lastName, studentId: userData.studentId };
     const { qrCodeDataUri } = await generateQrCode({ userProfile: JSON.stringify(userProfile) });
-    const newUser = { firstName, lastName, studentId, qrCode: qrCodeDataUri };
+    const newUser = { ...userData, qrCode: qrCodeDataUri };
     return addDoc(collection(db, "users"), newUser);
   };
 
-  const updateUser = async (id: string, firstName: string, lastName: string, studentId: string) => {
+  const updateUser = async (id: string, userData: UserData) => {
     if (!db) return;
-    const userProfile = { firstName, lastName, studentId };
+    const userProfile = { firstName: userData.firstName, lastName: userData.lastName, studentId: userData.studentId };
     const { qrCodeDataUri } = await generateQrCode({ userProfile: JSON.stringify(userProfile) });
     const userDocRef = doc(db, 'users', id);
-    return updateDoc(userDocRef, { firstName, lastName, studentId, qrCode: qrCodeDataUri });
+    return updateDoc(userDocRef, { ...userData, qrCode: qrCodeDataUri });
   };
 
   const deleteUser = async (id: string) => {
@@ -141,7 +143,7 @@ const useAppState = () => {
   };
 
 
-  const logAttendance = useCallback(async (scannedData: string) => {
+  const logAttendance = useCallback(async (scannedData: string, roomId?: string) => {
     if (!db) return { success: false, message: "Database not connected." };
     try {
       const { firstName, lastName, studentId } = JSON.parse(scannedData);
@@ -161,6 +163,11 @@ const useAppState = () => {
       const userDoc = userSnapshot.docs[0];
       const user = { ...userDoc.data(), id: userDoc.id } as User;
       
+      // If scanning within a room context, check if user belongs to the room
+      if (roomId && user.roomId !== roomId) {
+        return { success: false, message: `User does not belong to this room.` };
+      }
+
       const today = new Date();
       const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       
@@ -194,8 +201,10 @@ const useAppState = () => {
           studentId: user.studentId,
           qrCode: user.qrCode,
         }, 
-        timestamp: new Date() 
+        timestamp: new Date(),
+        roomId: roomId || user.roomId, // Log the specific room if provided, otherwise the user's default room
       };
+      
       await addDoc(collection(db, 'attendance'), newRecord);
 
       return { success: true, user };

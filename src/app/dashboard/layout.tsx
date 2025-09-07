@@ -20,7 +20,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Users, ScanLine, Calendar, QrCode, LogOut, Menu, Home } from 'lucide-react';
+import { Users, ScanLine, Calendar, QrCode, LogOut, Menu, Home, School } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -61,10 +61,8 @@ export default function DashboardLayout({
   }
 
   const navItems = [
-    { href: "/dashboard/rooms", label: "Rooms", icon: Home },
-    { href: "/dashboard", label: "Users", icon: Users },
-    { href: "/dashboard/scan", label: "Scan QR", icon: ScanLine },
-    { href: "/dashboard/log", label: "Attendance Log", icon: Calendar },
+    { href: "/dashboard", label: "Dashboard", icon: Home },
+    { href: "/dashboard/users", label: "All Users", icon: Users },
   ];
 
   const handleLogout = () => {

@@ -26,11 +26,14 @@ import { useApp } from "@/components/providers";
 import type { User } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 const formSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters."),
   lastName: z.string().min(2, "Last name must be at least 2 characters."),
   studentId: z.string().min(1, "Student ID is required."),
+  roomId: z.string().optional(),
 });
 
 interface UserFormProps {
@@ -38,10 +41,11 @@ interface UserFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onFinished: () => void;
+  defaultRoomId?: string;
 }
 
-export function UserForm({ user, open, onOpenChange, onFinished }: UserFormProps) {
-  const { addUser, updateUser } = useApp();
+export function UserForm({ user, open, onOpenChange, onFinished, defaultRoomId }: UserFormProps) {
+  const { addUser, updateUser, rooms } = useApp();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -51,6 +55,7 @@ export function UserForm({ user, open, onOpenChange, onFinished }: UserFormProps
       firstName: "",
       lastName: "",
       studentId: "",
+      roomId: "",
     },
   });
 
@@ -60,18 +65,19 @@ export function UserForm({ user, open, onOpenChange, onFinished }: UserFormProps
         firstName: user?.firstName || "",
         lastName: user?.lastName || "",
         studentId: user?.studentId || "",
+        roomId: user?.roomId || defaultRoomId || "",
       });
     }
-  }, [user, open, form]);
+  }, [user, open, form, defaultRoomId]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     try {
       if (user) {
-        await updateUser(user.id, values.firstName, values.lastName, values.studentId);
+        await updateUser(user.id, values);
         toast({ title: "User Updated", description: "The user's details have been updated." });
       } else {
-        await addUser(values.firstName, values.lastName, values.studentId);
+        await addUser(values);
         toast({ title: "User Added", description: "A new user has been created." });
       }
       onFinished();
@@ -133,6 +139,29 @@ export function UserForm({ user, open, onOpenChange, onFinished }: UserFormProps
                   <FormControl>
                     <Input placeholder="e.g. 12345" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="roomId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Room</FormLabel>
+                   <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Assign to a room" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">-- Not Assigned --</SelectItem>
+                      {rooms.map(room => (
+                        <SelectItem key={room.id} value={room.id}>{room.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

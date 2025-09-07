@@ -4,18 +4,20 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ScanLine, Video, VideoOff, CheckCircle2, Upload } from "lucide-react";
-import { useApp } from "@/components/providers";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import jsQR from "jsqr";
 
-export function QrScanner() {
+interface QrScannerProps {
+    onScan: (data: string) => Promise<{success: boolean; message?: string; user?: any}>
+}
+
+export function QrScanner({ onScan }: QrScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const { logAttendance } = useApp();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   
@@ -24,7 +26,7 @@ export function QrScanner() {
     setIsProcessing(true);
 
     try {
-        const result = await logAttendance(data);
+        const result = await onScan(data);
         if(result.success) {
             setShowSuccess(true);
             setTimeout(() => setShowSuccess(false), 1500); 
@@ -50,7 +52,7 @@ export function QrScanner() {
     }
 
     setTimeout(() => setIsProcessing(false), 2000); // Cooldown period
-  }, [isProcessing, logAttendance, toast]);
+  }, [isProcessing, onScan, toast]);
 
   const tick = useCallback(() => {
     if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA && canvasRef.current) {
