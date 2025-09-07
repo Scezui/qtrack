@@ -149,15 +149,15 @@ const useAppState = () => {
     await deleteDoc(doc(db, "users", id));
   };
 
-  const addRoom = async (name: string) => {
+  const addRoom = async (name: string, teacher?: string) => {
     if (!db || !firebaseUser) return;
-    return addDoc(collection(db, "rooms"), { name, adminId: firebaseUser.uid });
+    return addDoc(collection(db, "rooms"), { name, teacher: teacher || "", adminId: firebaseUser.uid });
   };
 
-  const updateRoom = async (id: string, name: string) => {
+  const updateRoom = async (id: string, name: string, teacher?: string) => {
     if (!db) return;
     const roomDocRef = doc(db, 'rooms', id);
-    return updateDoc(roomDocRef, { name });
+    return updateDoc(roomDocRef, { name, teacher: teacher || "" });
   };
 
   const deleteRoom = async (id: string) => {

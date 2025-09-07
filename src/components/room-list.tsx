@@ -5,10 +5,15 @@ import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, School } from "lucide-react";
+import { ArrowRight, School, User, Pencil } from "lucide-react";
 import { useApp } from "@/components/providers";
+import type { Room } from "@/lib/types";
 
-export function RoomList() {
+interface RoomListProps {
+  onEdit: (room: Room) => void;
+}
+
+export function RoomList({ onEdit }: RoomListProps) {
   const { rooms } = useApp();
   const router = useRouter();
 
@@ -38,9 +43,20 @@ export function RoomList() {
         <Card key={room.id} className="flex flex-col">
           <CardHeader>
             <CardTitle>{room.name}</CardTitle>
-            <CardDescription>Click to manage this room.</CardDescription>
+            {room.teacher ? (
+              <CardDescription className="flex items-center pt-2">
+                <User className="mr-2 h-4 w-4" />
+                {room.teacher}
+              </CardDescription>
+            ) : (
+                <CardDescription>Click to manage this room.</CardDescription>
+            )}
           </CardHeader>
-          <CardFooter className="mt-auto">
+          <CardFooter className="mt-auto flex gap-2">
+             <Button variant="outline" size="icon" onClick={() => onEdit(room)}>
+                <Pencil className="h-4 w-4" />
+                <span className="sr-only">Edit Room</span>
+            </Button>
             <Button onClick={() => handleRoomClick(room.id)} className="w-full">
               Enter Room
               <ArrowRight className="ml-2 h-4 w-4" />

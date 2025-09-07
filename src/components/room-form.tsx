@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -29,6 +30,7 @@ import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2, "Room name must be at least 2 characters."),
+  teacher: z.string().optional(),
 });
 
 interface RoomFormProps {
@@ -47,6 +49,7 @@ export function RoomForm({ room, open, onOpenChange, onFinished }: RoomFormProps
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
+      teacher: "",
     },
   });
 
@@ -54,6 +57,7 @@ export function RoomForm({ room, open, onOpenChange, onFinished }: RoomFormProps
     if (open) {
       form.reset({
         name: room?.name || "",
+        teacher: room?.teacher || "",
       });
     }
   }, [room, open, form]);
@@ -62,10 +66,10 @@ export function RoomForm({ room, open, onOpenChange, onFinished }: RoomFormProps
     setIsSubmitting(true);
     try {
       if (room) {
-        await updateRoom(room.id, values.name);
+        await updateRoom(room.id, values.name, values.teacher);
         toast({ title: "Room Updated", description: "The room's details have been updated." });
       } else {
-        await addRoom(values.name);
+        await addRoom(values.name, values.teacher);
         toast({ title: "Room Added", description: "A new room has been created." });
       }
       onFinished();
@@ -87,7 +91,7 @@ export function RoomForm({ room, open, onOpenChange, onFinished }: RoomFormProps
         <DialogHeader>
           <DialogTitle>{room ? "Edit Room" : "Add New Room"}</DialogTitle>
           <DialogDescription>
-            {room ? "Edit the room's details below." : "Enter the new room's name."}
+            {room ? "Edit the room's details below." : "Enter the new room's details."}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -100,6 +104,19 @@ export function RoomForm({ room, open, onOpenChange, onFinished }: RoomFormProps
                   <FormLabel>Room Name</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g. Grade 5 - Section A" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="teacher"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Teacher Name (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Mr. Smith" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
