@@ -40,7 +40,7 @@ const generateQrCodeFlow = ai.defineFlow(
     outputSchema: GenerateQrCodeOutputSchema,
   },
   async input => {
-    const encryptedProfile = encrypt(input.userProfile);
+    const encryptedProfile = await encrypt(input.userProfile);
     const qrCodeDataUri = await QRCode.toDataURL(encryptedProfile, { width: 512 });
     return { qrCodeDataUri };
   }
