@@ -252,24 +252,32 @@ const useAppState = () => {
     toast({ title: "Refreshing QR Codes", description: "This may take a few moments..." });
 
     try {
-      const batch = writeBatch(db);
-      for (const user of users) {
-        const userProfile = { 
-          firstName: user.firstName, 
-          lastName: user.lastName, 
-          studentId: user.studentId,
-          roomId: user.roomId,
-        };
-        const { qrCodeDataUri } = await generateQrCode({ userProfile: JSON.stringify(userProfile) });
+      // Process users in batches to avoid timeout issues
+      const batchSize = 100;
+      for (let i = 0; i < users.length; i += batchSize) {
+        const batchUsers = users.slice(i, i + batchSize);
+        const batch = writeBatch(db);
         
-        const userDocRef = doc(db, 'users', user.id);
-        batch.update(userDocRef, { qrCode: qrCodeDataUri });
+        for (const user of batchUsers) {
+          const userProfile = { 
+            firstName: user.firstName, 
+            lastName: user.lastName, 
+            studentId: user.studentId,
+            roomId: user.roomId,
+          };
+          const { qrCodeDataUri } = await generateQrCode({ userProfile: JSON.stringify(userProfile) });
+          
+          const userDocRef = doc(db, 'users', user.id);
+          batch.update(userDocRef, { qrCode: qrCodeDataUri });
+        }
+        
+        await batch.commit();
       }
-      await batch.commit();
+
       toast({ title: "Success", description: "All QR codes have been refreshed." });
     } catch(error) {
       console.error("Failed to refresh QR codes: ", error);
-      toast({ variant: "destructive", title: "Refresh Failed", description: "An error occurred while refreshing a QR code." });
+      toast({ variant: "destructive", title: "Refresh Failed", description: "An error occurred while refreshing QR codes." });
     }
   };
   
