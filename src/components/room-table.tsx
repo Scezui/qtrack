@@ -29,6 +29,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 import { useApp } from "@/components/providers";
 import { RoomForm } from "@/components/room-form";
@@ -44,6 +46,7 @@ export function RoomTable() {
   const { toast } = useToast();
   
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
 
   const sortedRooms = useMemo(() => {
     return [...rooms].sort((a, b) => {
@@ -67,14 +70,21 @@ export function RoomTable() {
     setRoomToDelete(room);
     setIsAlertOpen(true);
   }
+  
+  const handleAlertOpenChange = (open: boolean) => {
+    if (!open) {
+        setRoomToDelete(null);
+        setDeleteConfirmationText("");
+    }
+    setIsAlertOpen(open);
+  }
 
   const confirmDelete = () => {
     if (roomToDelete) {
       deleteRoom(roomToDelete.id);
       toast({ title: "Room Deleted", description: `Room ${roomToDelete.name} has been removed.` });
     }
-    setIsAlertOpen(false);
-    setRoomToDelete(null);
+    handleAlertOpenChange(false);
   };
 
   return (
@@ -139,17 +149,34 @@ export function RoomTable() {
         onFinished={() => setSelectedRoom(null)}
       />
 
-      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+      <AlertDialog open={isAlertOpen} onOpenChange={handleAlertOpenChange}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the room and all its data.
+              This action cannot be undone. This will permanently delete the room and all its associated data. 
+              To confirm, please type <strong>delete</strong> in the box below.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="space-y-2 my-2">
+            <Label htmlFor="delete-confirm">Confirmation</Label>
+            <Input
+              id="delete-confirm"
+              value={deleteConfirmationText}
+              onChange={(e) => setDeleteConfirmationText(e.target.value)}
+              placeholder="delete"
+              autoComplete="off"
+            />
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              disabled={deleteConfirmationText !== 'delete'}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
