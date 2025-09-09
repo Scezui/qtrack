@@ -242,6 +242,26 @@ const useAppState = () => {
       return { success: false, message: "Invalid or corrupt QR code data." };
     }
   }, [toast, firebaseUser, db]);
+  
+  const refreshUserQrCode = async (userId: string) => {
+    if (!db) return;
+    const user = users.find(u => u.id === userId);
+    if (!user) {
+        toast({ variant: "destructive", title: "Error", description: "User not found." });
+        return;
+    }
+
+    const userProfile = { 
+        firstName: user.firstName, 
+        lastName: user.lastName, 
+        studentId: user.studentId,
+        roomId: user.roomId,
+    };
+    const { qrCodeDataUri } = await generateQrCode({ userProfile: JSON.stringify(userProfile) });
+    
+    const userDocRef = doc(db, 'users', user.id);
+    return updateDoc(userDocRef, { qrCode: qrCodeDataUri });
+  };
 
   const refreshAllQrCodes = async () => {
     if (!db || !firebaseUser) {
@@ -312,6 +332,7 @@ const useAppState = () => {
     deleteRoom,
     attendanceLog,
     logAttendance,
+    refreshUserQrCode,
     refreshAllQrCodes,
     loading,
     isAuthenticated,

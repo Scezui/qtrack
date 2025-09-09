@@ -11,8 +11,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, Download, ArrowUpDown, GripVertical } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, Download, ArrowUpDown, RefreshCw } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,7 +54,7 @@ interface UserTableProps {
 }
 
 export function UserTable({ users: initialUsers, showActions = true }: UserTableProps) {
-  const { deleteUser, users: allUsers, rooms } = useApp();
+  const { deleteUser, users: allUsers, rooms, refreshUserQrCode } = useApp();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isQrViewOpen, setIsQrViewOpen] = useState(false);
@@ -128,6 +136,11 @@ export function UserTable({ users: initialUsers, showActions = true }: UserTable
     document.body.removeChild(link);
     toast({ title: "QR Code Downloading", description: `The QR code for ${user.firstName} ${user.lastName} is downloading.` });
   };
+  
+  const handleRefreshQr = async (user: User) => {
+    await refreshUserQrCode(user.id);
+    toast({ title: "QR Code Refreshed", description: `The QR code for ${user.firstName} ${user.lastName} has been refreshed.` });
+  };
 
   const SortableHeader = ({ sortKey: key, label }: { sortKey: SortKey, label: string }) => (
     <TableHead>
@@ -149,7 +162,7 @@ export function UserTable({ users: initialUsers, showActions = true }: UserTable
               <SortableHeader sortKey="firstName" label="First Name" />
               <SortableHeader sortKey="studentId" label="Student ID" />
               <SortableHeader sortKey="roomName" label="Room" />
-              {showActions && <TableHead className="text-right w-[140px]">Actions</TableHead>}
+              {showActions && <TableHead className="text-right w-[100px]">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -178,48 +191,34 @@ export function UserTable({ users: initialUsers, showActions = true }: UserTable
                     )}
                   </TableCell>
                   {showActions && (
-                    <TableCell>
-                      <div className="flex items-center justify-end gap-2">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" onClick={() => downloadQrCode(user)}>
-                                <Download className="h-4 w-4" />
-                                <span className="sr-only">Download QR</span>
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Download QR</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" onClick={() => handleEdit(user)}>
-                                <Pencil className="h-4 w-4" />
-                                <span className="sr-only">Edit User</span>
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Edit User</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(user)} className="text-destructive hover:text-destructive focus:text-destructive">
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Delete User</span>
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Delete User</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
+                    <TableCell className="text-right">
+                       <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => handleViewQr(user)}>
+                            View QR
+                          </DropdownMenuItem>
+                           <DropdownMenuItem onClick={() => downloadQrCode(user)}>
+                            Download QR
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleRefreshQr(user)}>
+                            Refresh QR
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleEdit(user)}>
+                            Edit User
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDeleteClick(user)} className="text-destructive focus:text-destructive">
+                            Delete User
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   )}
                 </TableRow>
@@ -256,7 +255,7 @@ export function UserTable({ users: initialUsers, showActions = true }: UserTable
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the user and their data.
             </AlertDialogDescription>
-          </AlertDialogHeader>
+          </Header>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
