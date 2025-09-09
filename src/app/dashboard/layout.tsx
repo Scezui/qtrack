@@ -21,7 +21,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Users, ScanLine, Calendar, QrCode, LogOut, Menu, Home, School } from 'lucide-react';
+import { Users, ScanLine, Calendar, QrCode, LogOut, Menu, Home } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -63,7 +63,6 @@ export default function DashboardLayout({
 
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home },
-    { href: "/dashboard/rooms", label: "Rooms", icon: School },
     { href: "/dashboard/users", label: "All Users", icon: Users },
   ];
 

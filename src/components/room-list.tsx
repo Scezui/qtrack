@@ -5,15 +5,16 @@ import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, School, User, Pencil } from "lucide-react";
+import { ArrowRight, School, User, Pencil, Trash2 } from "lucide-react";
 import { useApp } from "@/components/providers";
 import type { Room } from "@/lib/types";
 
 interface RoomListProps {
   onEdit: (room: Room) => void;
+  onDelete: (room: Room) => void;
 }
 
-export function RoomList({ onEdit }: RoomListProps) {
+export function RoomList({ onEdit, onDelete }: RoomListProps) {
   const { rooms } = useApp();
   const router = useRouter();
 
@@ -56,6 +57,10 @@ export function RoomList({ onEdit }: RoomListProps) {
              <Button variant="outline" size="icon" onClick={() => onEdit(room)}>
                 <Pencil className="h-4 w-4" />
                 <span className="sr-only">Edit Room</span>
+            </Button>
+            <Button variant="outline" size="icon" className="text-destructive hover:text-destructive" onClick={() => onDelete(room)}>
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">Delete Room</span>
             </Button>
             <Button onClick={() => handleRoomClick(room.id)} className="w-full">
               Enter Room
