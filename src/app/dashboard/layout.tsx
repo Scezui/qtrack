@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -62,6 +63,7 @@ export default function DashboardLayout({
 
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home },
+    { href: "/dashboard/rooms", label: "Rooms", icon: School },
     { href: "/dashboard/users", label: "All Users", icon: Users },
   ];
 
