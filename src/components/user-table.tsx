@@ -255,7 +255,7 @@ export function UserTable({ users: initialUsers, showActions = true }: UserTable
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the user and their data.
             </AlertDialogDescription>
-          </Header>
+          </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
