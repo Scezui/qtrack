@@ -3,11 +3,17 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, School, User, Pencil, Trash2 } from "lucide-react";
+import { ArrowRight, School, User, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { useApp } from "@/components/providers";
 import type { Room } from "@/lib/types";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface RoomListProps {
   onEdit: (room: Room) => void;
@@ -15,8 +21,18 @@ interface RoomListProps {
 }
 
 export function RoomList({ onEdit, onDelete }: RoomListProps) {
-  const { rooms } = useApp();
+  const { rooms, users } = useApp();
   const router = useRouter();
+
+  const roomUserCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    users.forEach(user => {
+        if (user.roomId) {
+            counts[user.roomId] = (counts[user.roomId] || 0) + 1;
+        }
+    });
+    return counts;
+  }, [users]);
 
   const sortedRooms = useMemo(() => {
     return [...rooms].sort((a, b) => {
@@ -42,29 +58,44 @@ export function RoomList({ onEdit, onDelete }: RoomListProps) {
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {sortedRooms.map((room) => (
         <Card key={room.id} className="flex flex-col">
-          <CardHeader>
-            <CardTitle>{room.name}</CardTitle>
-            {room.teacher ? (
-              <CardDescription className="flex items-center pt-2">
-                <User className="mr-2 h-4 w-4" />
-                {room.teacher}
-              </CardDescription>
-            ) : (
-                <CardDescription>Click to manage this room.</CardDescription>
-            )}
-          </CardHeader>
-          <CardFooter className="mt-auto flex gap-2">
-             <Button variant="outline" size="icon" onClick={() => onEdit(room)}>
-                <Pencil className="h-4 w-4" />
-                <span className="sr-only">Edit Room</span>
-            </Button>
-            <Button variant="outline" size="icon" className="text-destructive hover:text-destructive" onClick={() => onDelete(room)}>
-                <Trash2 className="h-4 w-4" />
-                <span className="sr-only">Delete Room</span>
-            </Button>
+            <CardHeader className="flex flex-row items-start justify-between">
+                <div>
+                    <CardTitle>{room.name}</CardTitle>
+                    {room.teacher && (
+                    <CardDescription className="flex items-center pt-2">
+                        <User className="mr-2 h-4 w-4" />
+                        {room.teacher}
+                    </CardDescription>
+                    )}
+                </div>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <span className="sr-only">Open menu</span>
+                        <MoreVertical className="h-4 w-4" />
+                    </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onEdit(room)}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        <span>Edit</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onDelete(room)} className="text-destructive focus:text-destructive">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>Delete</span>
+                    </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </CardHeader>
+            <CardContent>
+                <div className="text-sm text-muted-foreground">
+                    {roomUserCounts[room.id] || 0} user(s) assigned.
+                </div>
+            </CardContent>
+          <CardFooter className="mt-auto">
             <Button onClick={() => handleRoomClick(room.id)} className="w-full">
               Enter Room
-              <ArrowRight className="ml-2 h-4 w-4" />
+              <ArrowRight className="ml-auto h-4 w-4" />
             </Button>
           </CardFooter>
         </Card>
